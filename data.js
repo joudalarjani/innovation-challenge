@@ -6,13 +6,14 @@ const G = {
   // LANDING
   // ══════════════════════════════════════════
   landing: {
-    title: "هل أنت رائد أعمال المستقبل؟",
-    subtitle: "اختبر قراراتك في عالم ريادة الأعمال الحقيقي",
+    title: "أنت على وشك اكتشاف\nالمبتكر داخلك",
+    subtitle: "أربع قرارات حقيقية من عالم الابتكار — كيف ستمضي فيها؟",
+    heroBadge: "تجربة تفاعلية · نادي الابتكار وريادة الأعمال",
     entrepreneurs: [
-      { name: "إيلون ماسك", company: "Tesla / SpaceX", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/330px-Elon_Musk_Royal_Society_%28crop2%29.jpg" },
-      { name: "ستيف جوبز", company: "Apple", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Steve_Jobs_Headshot_2010-Cropped.jpg/330px-Steve_Jobs_Headshot_2010-Cropped.jpg" },
-      { name: "جيف بيزوس", company: "Amazon", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Jeff_Bezos_visits_LAAFD_Sep_2019_%28cropped%29.jpg/330px-Jeff_Bezos_visits_LAAFD_Sep_2019_%28cropped%29.jpg" },
-      { name: "آنا كورنيكوفا", company: "Serial Investor", img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Anna_Kournikova_at_the_2009_Miami_Marathon.jpg/330px-Anna_Kournikova_at_the_2009_Miami_Marathon.jpg" }
+      { id: "musk", name: "إيلون ماسك", company: "Tesla · SpaceX", role: "Risktaker", tags: ["الجرأة", "الرؤية", "التقنية"], img: "assets/portraits/elon-musk.jpg", accent: "#E86A6A" },
+      { id: "jobs", name: "ستيف جوبز", company: "Apple", role: "Innovator", tags: ["الإبداع", "الكمال", "البصيرة"], img: "assets/portraits/steve-jobs.jpg", accent: "#9F7AEA" },
+      { id: "bezos", name: "جيف بيزوس", company: "Amazon", role: "Strategist", tags: ["الاستراتيجية", "التحليل", "الرؤية الطويلة"], img: "assets/portraits/jeff-bezos.jpg", accent: "#E8B547" },
+      { id: "zuck", name: "مارك زوكربيرغ", company: "Meta", role: "Visionary", tags: ["السرعة", "البناء", "التقنية"], img: "assets/portraits/mark-zuckerberg.jpg", accent: "#4A9FE8" }
     ]
   },
 
@@ -366,7 +367,7 @@ const G = {
       color: "#E86A6A",
       desc: "أنت لا تتردد. تؤمن بأن التجربة هي أسرع طريق للتعلم.",
       match: "إيلون ماسك",
-      matchImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Elon_Musk_Royal_Society_%28crop2%29.jpg/220px-Elon_Musk_Royal_Society_%28crop2%29.jpg",
+      matchImg: "assets/portraits/elon-musk.jpg",
       matchReason: "لأنك تميل إلى اتخاذ القرارات الجريئة وتفضّل التجربة على الانتظار.",
       advice: "لديك قدرة ممتازة على الحركة السريعة — لكن تذكر أن أخطر القرارات هي التي تُتخذ دون تفكير. أضف لحظة تأمل قبل كل قرار كبير."
     },
@@ -376,7 +377,7 @@ const G = {
       color: "#E8B547",
       desc: "أنت تحسب كل خطوة. لا تتسرع — بل تخطط ثم تتحرك.",
       match: "جيف بيزوس",
-      matchImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Jeff_Bezos_visits_LAAFD_Sep_2019_%28cropped%29.jpg/220px-Jeff_Bezos_visits_LAAFD_Sep_2019_%28cropped%29.jpg",
+      matchImg: "assets/portraits/jeff-bezos.jpg",
       matchReason: "لأنك تُقدّم التحليل قبل الحماس — وهذا ما يصنع الشركات الكبرى.",
       advice: "تخطيطك ممتاز — لكن أحياناً التحليل الزائد يُؤدي للفوات Opportunities. لا تنتظر الكمال قبل البدء."
     },
@@ -386,7 +387,7 @@ const G = {
       color: "#9F7AEA",
       desc: "أنت ترى حلولاً حيث لا يراها الآخرون. تفكيرك خارج الصندوق.",
       match: "ستيف جوبز",
-      matchImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Steve_Jobs_Headshot_2010-Cropped.jpg/220px-Steve_Jobs_Headshot_2010-Cropped.jpg",
+      matchImg: "assets/portraits/steve-jobs.jpg",
       matchReason: "لأنك تبحث عن الأصالة وتفضّل الابتكار على تقليد الآخرين.",
       advice: "إبداعك أداة قوية — لكن تذكر أن التنفيذ أهم من الفكرة. لا تترك إبداعك يتلاشى بسبب الكمالية."
     },
@@ -396,7 +397,7 @@ const G = {
       color: "#5BC78F",
       desc: "أنت تبدأ دائمًا من العميل. تفهم ما يحتاجه قبل أن يُخبرك.",
       match: "سام وينشتاين",
-      matchImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sam_Alwan_at_UMass_Lowell.jpg/220px-Sam_Alwan_at_UMass_Lowell.jpg",
+      matchImg: "assets/portraits/steve-jobs.jpg",
       matchReason: "لأنك تضع المستخدم في قلب كل قرار — وهذا ما يصنع الولاء.",
       advice: "فهمك للعميل ممتاز — لكن تذكر أن أحياناً العميل لا يعرف ما يريده. كن أحياناً أكثر جرأة في رؤيتك."
     },
@@ -406,7 +407,7 @@ const G = {
       color: "#4A9FE8",
       desc: "أنت تتحرك بسرعة. تفضل الفعل على الانتظار — والنتيجة على الكمال.",
       match: "مارك زوكربيرغ",
-      matchImg: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Mark_Zuckerberg_F8_2019_Keynote_%2832831578717%29_%28cropped%29.jpg/220px-Mark_Zuckerberg_F8_2019_Keynote_%2832831578717%29_%28cropped%29.jpg",
+      matchImg: "assets/portraits/mark-zuckerberg.jpg",
       matchReason: "لأنك تُ launching before perfection — وهذا ما يصنع الشركات السريعة.",
       advice: "سرعتك ميزة نادرة — لكن أحياناً التسرع يُفقدك تفاصيل مهمة. أضف فريقًا يُكمل تفكيرك."
     }

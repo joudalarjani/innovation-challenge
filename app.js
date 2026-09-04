@@ -2,6 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const escf = s => String(s).replace(/"/g,"&quot;");
 
 // ═══ STATE ═══
 const S = {
@@ -25,6 +26,7 @@ function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   $(id).classList.add("active");
   S.screen = id;
+  if (id === "menuScreen") initMenu();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -32,17 +34,21 @@ function showScreen(id) {
 function initLanding() {
   $("landingTitle").textContent = G.landing.title;
   $("landingSub").textContent = G.landing.subtitle;
-  $("entrepreneursGrid").innerHTML = G.landing.entrepreneurs.map(e => {
-    const fallback = e.name[0];
-    return `<div class="e-card">
-      <div class="e-img-wrap">
-        <img class="e-img" src="${esc(e.img)}" alt="${esc(e.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
-        <div class="e-fallback" style="display:none">${fallback}</div>
+  $("entrepreneursGrid").innerHTML = G.landing.entrepreneurs.map(e => `
+    <div class="e-card" style="--pc:${e.accent}" data-tilt data-magnetic>
+      <div class="e-portrait">
+        <img src="${esc(e.img)}" alt="${esc(e.name)}"
+             onerror="this.style.opacity=0;this.nextElementSibling.style.opacity=1">
+        <div class="e-fallback" style="opacity:0;position:absolute;inset:0;display:grid;place-items:center;font-size:3rem;font-weight:900">${escf(e.name[0])}</div>
+        <div class="e-mask"></div>
+        <div class="e-overlay">
+          <div class="e-name">${esc(e.name)}</div>
+          <div class="e-company">${esc(e.company)}</div>
+          <div class="e-tags">${e.tags.map(t=>`<span class="e-tag">${esc(t)}</span>`).join("")}</div>
+        </div>
       </div>
-      <div class="e-name">${esc(e.name)}</div>
-      <div class="e-company">${esc(e.company)}</div>
-    </div>`;
-  }).join("");
+    </div>
+  `).join("");
 }
 
 // ═══ ABOUT ═══
@@ -82,19 +88,39 @@ function initAbout() {
 }
 
 // ═══ MENU ═══
+const JOURNEY = [
+  { id: "c1", label: "الاكتشاف", icon: "🎯" },
+  { id: "c2", label: "القرار", icon: "⚡" },
+  { id: "c3", label: "الابتكار", icon: "🏪" },
+  { id: "c4", label: "فهم العميل", icon: "💬" },
+  { id: "type", label: "شخصيتك", icon: "🚀" }
+];
+
+function renderJourney(activeId) {
+  const el = $("menuJourney");
+  if (!el) return;
+  const activeIdx = JOURNEY.findIndex(j => j.id === activeId);
+  el.innerHTML = JOURNEY.map((j, i) => {
+    let cls = "j-step";
+    if (i < activeIdx) cls += " done";
+    else if (i === activeIdx) cls += " active";
+    const conn = i < JOURNEY.length - 1 ? `<span class="j-conn ${i < activeIdx ? 'done' : ''}"></span>` : "";
+    return `<span class="${cls}"><span class="jp"></span>${esc(j.label)}</span>${conn}`;
+  }).join("");
+}
+
 function initMenu() {
-  const done = S.completed.size;
-  $("menuProgress").style.width = (done / 4 * 100) + "%";
+  renderJourney(-1);
   $("challengesGrid").innerHTML = G.challenges.map(c => `
-    <div class="ch-card" style="--c:${c.color}" onclick="startChallenge('${c.id}')">
-      <div class="ch-num">${c.number}</div>
+    <div class="ch-card" style="--c:${c.color}" onclick="startChallenge('${c.id}')" data-tilt>
+      <div class="ch-num">${String(c.number).padStart(2,"0")}</div>
       <div class="ch-icon">${c.icon}</div>
       <h3>${esc(c.title)}</h3>
       <p>${esc(c.desc)}</p>
       <div class="ch-meta">
         <span class="diff-badge ${c.diff === 'متوسط' ? 'easy' : c.diff === 'صعب' ? 'med' : 'hard'}">${esc(c.diff)}</span>
-        <span>⏱️ ${esc(c.time)}</span>
-        ${S.completed.has(c.id) ? '<span class="done-badge">✓ مكتمل</span>' : ''}
+        <span class="meta-chip">⏱️ ${esc(c.time)}</span>
+        ${S.completed.has(c.id) ? '<span class="meta-chip done-badge">✓ مكتمل</span>' : ''}
       </div>
     </div>
   `).join("");
@@ -102,6 +128,7 @@ function initMenu() {
 
 // ═══ START CHALLENGE ═══
 function startChallenge(id) {
+  if ($("menuJourney")) renderJourney(id);
   switch(id) {
     case "c1": startC1(); break;
     case "c2": startC2(); break;
@@ -542,6 +569,7 @@ function finishC4() {
 // FINAL RESULT
 // ═══════════════════════════════════════════
 function showFinalResult() {
+  renderJourney("type");
   showScreen("resultScreen");
   renderFinalResult();
 }
@@ -595,17 +623,31 @@ function renderFinalResult() {
       ${renderScoreBar("فهم الجمهور", scores.userFocus, 15)}
       ${renderScoreBar("تقبل المخاطر", scores.risk, 15)}
       <div class="r-total">
-        <span> نتيجتك النهائية</span>
-        <span class="r-total-num">${Math.min(pct, 100)} / 100</span>
+        <span class="t-label"> نتيجتك النهائية</span>
+        <span class="r-total-num"><span id="scoreCounter">0</span><small> / 100</small></span>
       </div>
     </div>
 
     <div class="r-name-section">
       <div class="r-name-label">✍️ اكتب اسمك لإنشاء بطاقتك</div>
       <input class="r-name-input" id="playerNameInput" placeholder="اسمك هنا..." maxlength="30">
-      <button class="btn-primary" onclick="generateCard()">إنشاء البطاقة ←</button>
+      <button class="btn-primary" onclick="generateCard()">إنشاء البطاقة <span class="btn-arrow">←</span></button>
     </div>
   `;
+  animateCounter("scoreCounter", Math.min(pct, 100));
+}
+
+function animateCounter(id, target, dur = 1600) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(target * eased);
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 function renderScoreBar(label, value, max) {
@@ -641,18 +683,114 @@ function generateCard() {
   $("cardName").textContent = name;
   $("cardType").textContent = p.type;
   $("cardIcon").textContent = p.icon;
-  $("cardScore").textContent = Math.min(pct, 100) + "/100";
+  $("cardScore").innerHTML = Math.min(pct, 100) + "<small>/100</small>";
   $("cardMatch").textContent = "يشبه: " + p.match;
   $("cardDesc").textContent = p.desc;
-  $("cardOverlay").style.display = "flex";
+  $("cardOverlay").classList.add("show");
 }
 
 function closeCard() {
-  $("cardOverlay").style.display = "none";
+  $("cardOverlay").classList.remove("show");
 }
+
+// ═══ FX ENGINE — particles, tilt, magnetic, parallax ═══
+const FX = {
+  init() {
+    this.particles();
+    this.tilt();
+    this.magnetic();
+    this.parallax();
+    window.addEventListener("mousemove", e => (FX.mx = e.clientX, FX.my = e.clientY));
+  },
+  particles() {
+    const cv = document.getElementById("particles");
+    if (!cv) return;
+    const ctx = cv.getContext("2d");
+    let W, H, pts = [], raf;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    function resize() {
+      W = cv.width = window.innerWidth * DPR;
+      H = cv.height = window.innerHeight * DPR;
+      const n = Math.min(90, Math.floor((W / DPR) / 18));
+      pts = Array.from({ length: n }, () => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .35 * DPR, vy: (Math.random() - .5) * .35 * DPR,
+        r: (Math.random() * 1.6 + .4) * DPR,
+        a: Math.random() * .5 + .15
+      }));
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,201,77,${p.a})`;
+        ctx.fill();
+      }
+      if (FX.mx !== undefined) {
+        const mx = FX.mx * DPR, my = FX.my * DPR;
+        for (const p of pts) {
+          const dx = p.x - mx, dy = p.y - my, d = Math.hypot(dx, dy);
+          if (d < 130 * DPR) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mx, my);
+            ctx.strokeStyle = `rgba(255,201,77,${(1 - d / (130 * DPR)) * .28})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    }
+    resize();
+    draw();
+    window.addEventListener("resize", resize);
+  },
+  tilt() {
+    const cards = document.querySelectorAll("[data-tilt]");
+    if (!cards.length || !window.matchMedia("(hover:hover)").matches) return;
+    cards.forEach(card => {
+      card.addEventListener("mousemove", e => {
+        const r = card.getBoundingClientRect();
+        const rx = ((e.clientX - r.left) / r.width - .5) * 12;
+        const ry = ((e.clientY - r.top) / r.height - .5) * -12;
+        card.style.transform = `perspective(700px) rotateY(${rx}deg) rotateX(${ry}deg) translateY(-6px)`;
+      });
+      card.addEventListener("mouseleave", () => { card.style.transform = ""; });
+    });
+  },
+  magnetic() {
+    const els = document.querySelectorAll("[data-magnetic]");
+    if (!els.length || !window.matchMedia("(hover:hover)").matches) return;
+    els.forEach(el => {
+      el.addEventListener("mousemove", e => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * .25;
+        const y = (e.clientY - r.top - r.height / 2) * .25;
+        el.style.translate = `${x}px ${y}px`;
+      });
+      el.addEventListener("mouseleave", () => { el.style.translate = ""; });
+    });
+  },
+  parallax() {
+    const orbs = document.querySelectorAll(".orb");
+    if (!orbs.length) return;
+    window.addEventListener("pointermove", e => {
+      orbs.forEach((o, i) => {
+        const depth = (i + 1) * 14;
+        o.style.translate = `${(e.clientX - window.innerWidth / 2) / depth}px ${(e.clientY - window.innerHeight / 2) / depth}px`;
+      });
+    });
+  }
+};
 
 // ═══ INIT ═══
 function init() {
+  FX.init();
   initLanding();
   initAbout();
   initMenu();

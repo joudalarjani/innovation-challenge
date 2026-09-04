@@ -2,171 +2,178 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>هل أنت رائد أعمال المستقبل؟ | نادي الابتكار</title>
-  <meta name="description" content="تحديات تفاعلية في ريادة الأعمال — اختبر قراراتك في عالم الشركات الحقيقية">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>المبتكر داخلك | تجربة تفاعلية</title>
+  <meta name="description" content="أربع قرارات حقيقية من عالم الابتكار — اكتشف نوع المبتكر الذي بداخلك">
+  <meta name="theme-color" content="#05060f">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80' fill='%23E8B547'%3E🚀%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-  <!-- ===== LANDING ===== -->
-  <div id="landingScreen" class="screen active">
-    <div class="landing">
-      <div class="l-badge">🚀 نادي الابتكار — تحديات ريادة الأعمال</div>
-      <h1 class="l-title" id="landingTitle"></h1>
-      <p class="l-sub" id="landingSub"></p>
-      <div class="e-grid" id="entrepreneursGrid"></div>
-      <div class="l-actions">
-        <button class="btn-primary" onclick="showScreen('aboutScreen')">ℹ️ نبذة عن النادي</button>
-        <button class="btn-outline" onclick="showScreen('menuScreen')">⚡ ابدأ التحدي</button>
-      </div>
-    </div>
+  <!-- ===== ANIMATED BACKGROUND ===== -->
+  <div id="bg" aria-hidden="true">
+    <canvas id="particles"></canvas>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise"></div>
+    <div class="vignette"></div>
   </div>
 
-  <!-- ===== ABOUT ===== -->
-  <div id="aboutScreen" class="screen">
-    <div class="about">
-      <button class="btn-back" onclick="showScreen('landingScreen')">← العودة</button>
-      <div class="about-head" style="margin-top:24px">
-        <div class="about-logo">💡</div>
-        <h2 class="about-title" id="aboutTitle"></h2>
-      </div>
-      <p class="about-intro" id="aboutIntro"></p>
+  <div class="app-root">
 
-      <div class="ab-box" id="aboutVision"></div>
-      <div class="ab-box" id="aboutMission"></div>
-
-      <div class="goals-section">
-        <h3>🎯 أهدافنا</h3>
-        <ul class="goals-list" id="aboutGoals"></ul>
-      </div>
-
-      <h3 class="depts-title">⚙️ إدارات النادي</h3>
-      <p class="depts-sub">اضغط على أي إدارة لعرض لجانها</p>
-      <div class="depts-grid" id="aboutDepts"></div>
-
-      <div class="flex-box">
-        <strong>📌 العضوية المرنة</strong>
-        <p id="aboutFlexible"></p>
-      </div>
-
-      <div class="qr-box">
-        <h3>📝 سجّل الآن</h3>
-        <p>امسح الكود للانضمام لنادي الابتكار</p>
-        <img id="qrImg" class="qr-img" src="" alt="QR Code">
+    <!-- ===== LANDING ===== -->
+    <div id="landingScreen" class="screen active">
+      <div class="landing">
+        <span class="l-badge" data-reveal><span class="l-badge-dot"></span> تجربة تفاعلية · نادي الابتكار وريادة الأعمال</span>
+        <h1 class="l-title" id="landingTitle" data-reveal></h1>
+        <p class="l-sub" id="landingSub" data-reveal></p>
+        <div class="e-grid" id="entrepreneursGrid"></div>
+        <div class="l-actions" data-reveal>
+          <button class="btn-primary" onclick="showScreen('aboutScreen')">
+            <span class="btn-ico">✦</span><span>نبذة عن النادي</span>
+          </button>
+          <button class="btn-ghost" onclick="showScreen('menuScreen')">
+            <span>ابدأ التجربة</span><span class="btn-arrow">←</span>
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===== MENU ===== -->
-  <div id="menuScreen" class="screen">
-    <div class="menu">
-      <button class="btn-back" onclick="showScreen('landingScreen')">← العودة</button>
-      <div class="menu-head" style="margin-top:24px">
-        <h2 class="menu-title">اختر تحدّيك</h2>
-        <p class="menu-sub">كل تحدي يختبر مهارة مختلفة في ريادة الأعمال</p>
+    <!-- ===== ABOUT ===== -->
+    <div id="aboutScreen" class="screen">
+      <div class="about">
+        <button class="btn-back" onclick="showScreen('landingScreen')">→ رجوع</button>
+        <div class="about-head">
+          <div class="about-logo">💡</div>
+          <h2 class="about-title" id="aboutTitle"></h2>
+        </div>
+        <p class="about-intro" id="aboutIntro"></p>
+        <div class="ab-box" id="aboutVision"></div>
+        <div class="ab-box" id="aboutMission"></div>
+        <div class="goals-section">
+          <h3>🎯 أهدافنا</h3>
+          <ul class="goals-list" id="aboutGoals"></ul>
+        </div>
+        <h3 class="depts-title">⚙️ إدارات النادي</h3>
+        <p class="depts-sub">اضغط على أي إدارة لعرض لجانها</p>
+        <div class="depts-grid" id="aboutDepts"></div>
+        <div class="flex-box">
+          <strong>📌 العضوية المرنة</strong>
+          <p id="aboutFlexible"></p>
+        </div>
+        <div class="qr-box">
+          <h3>📝 سجّل الآن</h3>
+          <p>امسح الكود للانضمام لنادي الابتكار</p>
+          <img id="qrImg" class="qr-img" src="" alt="QR Code">
+        </div>
       </div>
-      <div class="progress"><div class="progress-fill" id="menuProgress" style="width:0%"></div></div>
-      <div class="ch-grid" id="challengesGrid"></div>
     </div>
-  </div>
 
-  <!-- ===== CHALLENGE 1 ===== -->
-  <div id="c1Screen" class="screen">
-    <div class="g-screen">
-      <div class="g-head">
-        <div>
-          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+    <!-- ===== MENU ===== -->
+    <div id="menuScreen" class="screen">
+      <div class="menu">
+        <button class="btn-back" onclick="showScreen('landingScreen')">→ رجوع</button>
+        <div class="menu-head">
+          <span class="kicker">Your Journey</span>
+          <h2 class="menu-title">اختر تحدّيك</h2>
+          <p class="menu-sub">أربع مراحل — كل واحدة تختبر جزءًا من عقليتك</p>
+        </div>
+        <div class="journey" id="menuJourney"></div>
+        <div class="ch-grid" id="challengesGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== CHALLENGE 1 ===== -->
+    <div id="c1Screen" class="screen">
+      <div class="g-screen">
+        <div class="g-head">
+          <button class="btn-back" onclick="showScreen('menuScreen')">→ رجوع</button>
           <h2 class="g-title" id="c1Title"></h2>
         </div>
-      </div>
-
-      <!-- Step 1: Choose problem -->
-      <div id="c1Step1">
-        <div class="sel-label">🔴 اختر مشكلة</div>
-        <div class="sel-grid" id="c1Problems"></div>
-        <div class="sel-label" style="margin-top:24px">👥 اختر جمهورًا</div>
-        <div class="sel-grid" id="c1Audiences"></div>
-      </div>
-
-      <!-- Step 2: Preview -->
-      <div id="c1Step2">
-        <div class="preview" id="c1Preview"></div>
-        <div style="text-align:center;margin-top:24px">
-          <button class="btn-primary" onclick="startC1Challenge()">ابدأ التحدي ←</button>
+        <div id="c1Step1" class="step-block">
+          <div class="phase-label phase-challenge"><span class="phase-ico">🎯</span> المرحلة 1 · اختر مشكلة</div>
+          <div class="sel-label">ما المشكلة التي تريد حلّها؟</div>
+          <div class="sel-grid" id="c1Problems"></div>
+          <div class="sel-label">ولأي جمهور؟</div>
+          <div class="sel-grid" id="c1Audiences"></div>
+        </div>
+        <div id="c1Step2" class="step-block">
+          <div class="preview" id="c1Preview"></div>
+          <div class="center">
+            <button class="btn-primary" onclick="startC1Challenge()"><span>ابدأ التحدي</span><span class="btn-arrow">←</span></button>
+          </div>
+        </div>
+        <div id="c1Step3" class="step-block">
+          <div id="c1QuestionArea"></div>
         </div>
       </div>
-
-      <!-- Step 3: Challenge question -->
-      <div id="c1Step3">
-        <div id="c1QuestionArea"></div>
-      </div>
     </div>
-  </div>
 
-  <!-- ===== CHALLENGE 2 ===== -->
-  <div id="c2Screen" class="screen">
-    <div class="g-screen">
-      <div class="g-head">
-        <div>
-          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+    <!-- ===== CHALLENGE 2 ===== -->
+    <div id="c2Screen" class="screen">
+      <div class="g-screen">
+        <div class="g-head">
+          <button class="btn-back" onclick="showScreen('menuScreen')">→ رجوع</button>
           <h2 class="g-title">قرارات تحت الضغط</h2>
         </div>
+        <div class="phase-label phase-pressure"><span class="phase-ico">⚡</span> المرحلة 2 · اتّخاذ القرار</div>
+        <div id="c2Title" class="g-sub"></div>
+        <div id="c2Area"></div>
       </div>
-      <div id="c2Title" style="font-size:.9rem;color:var(--mute);margin-bottom:16px"></div>
-      <div id="c2Area"></div>
     </div>
-  </div>
 
-  <!-- ===== CHALLENGE 3 ===== -->
-  <div id="c3Screen" class="screen">
-    <div class="g-screen">
-      <div class="g-head">
-        <div>
-          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+    <!-- ===== CHALLENGE 3 ===== -->
+    <div id="c3Screen" class="screen">
+      <div class="g-screen">
+        <div class="g-head">
+          <button class="btn-back" onclick="showScreen('menuScreen')">→ رجوع</button>
           <h2 class="g-title">محل في شارع ميت</h2>
         </div>
+        <div class="phase-label phase-pivot"><span class="phase-ico">🏪</span> المرحلة 3 · الابتكار</div>
+        <div id="c3Area"></div>
       </div>
-      <div id="c3Area"></div>
     </div>
-  </div>
 
-  <!-- ===== CHALLENGE 4 ===== -->
-  <div id="c4Screen" class="screen">
-    <div class="g-screen">
-      <div class="g-head">
-        <div>
-          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+    <!-- ===== CHALLENGE 4 ===== -->
+    <div id="c4Screen" class="screen">
+      <div class="g-screen">
+        <div class="g-head">
+          <button class="btn-back" onclick="showScreen('menuScreen')">→ رجوع</button>
           <h2 class="g-title">أقنعني</h2>
         </div>
+        <div class="phase-label phase-convince"><span class="phase-ico">💬</span> المرحلة 4 · فهم العميل</div>
+        <div id="c4Product"></div>
+        <div id="c4Area"></div>
+        <div class="c4-nav" id="c4Nav"></div>
       </div>
-      <div id="c4Product"></div>
-      <div id="c4Area"></div>
-      <div class="c4-nav" id="c4Nav"></div>
     </div>
-  </div>
 
-  <!-- ===== RESULT ===== -->
-  <div id="resultScreen" class="screen">
-    <div class="result" id="resultContent"></div>
-  </div>
-
-  <!-- ===== SHAREABLE CARD OVERLAY ===== -->
-  <div class="card-overlay" id="cardOverlay">
-    <div class="card-share">
-      <button class="card-close" onclick="closeCard()">✕</button>
-      <div class="card-share-icon" id="cardIcon"></div>
-      <div class="card-share-type" id="cardType"></div>
-      <div class="card-share-name" id="cardName"></div>
-      <div class="card-share-score" id="cardScore"></div>
-      <div class="card-share-match" id="cardMatch"></div>
-      <div class="card-share-desc" id="cardDesc"></div>
-      <div style="font-size:.75rem;color:var(--mute);margin-top:8px">نادي الابتكار — تحديات ريادة الأعمال</div>
+    <!-- ===== RESULT ===== -->
+    <div id="resultScreen" class="screen">
+      <div class="result" id="resultContent"></div>
     </div>
+
+    <!-- ===== SHAREABLE CARD OVERLAY ===== -->
+    <div class="card-overlay" id="cardOverlay">
+      <div class="card-share">
+        <button class="card-close" onclick="closeCard()">✕</button>
+        <div class="card-share-icon" id="cardIcon"></div>
+        <div class="card-share-type" id="cardType"></div>
+        <div class="card-share-name" id="cardName"></div>
+        <div class="card-share-score" id="cardScore"></div>
+        <div class="card-share-match" id="cardMatch"></div>
+        <div class="card-share-desc" id="cardDesc"></div>
+        <div class="card-share-brand">نادي الابتكار · المبتكر داخلك</div>
+      </div>
+    </div>
+
   </div>
 
   <script src="data.js"></script>
