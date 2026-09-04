@@ -90,6 +90,7 @@ img{max-width:100%;display:block}
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   text-shadow:0 20px 60px rgba(0,0,0,.5);white-space:pre-line}
 .l-sub{font-size:clamp(1rem,2.5vw,1.2rem);color:var(--mute);max-width:480px;margin-bottom:56px;font-weight:500}
+.l-credit{font-size:.82rem;color:var(--faint);letter-spacing:1px;margin-top:40px;font-weight:600;opacity:.6}
 
 /* ═══ BUTTONS ═══ */
 .btn-primary{display:inline-flex;align-items:center;gap:10px;padding:16px 30px;border-radius:16px;
@@ -293,6 +294,7 @@ img{max-width:100%;display:block}
 .qr-box h3{font-size:1.2rem;margin-bottom:8px;font-weight:900}
 .qr-box p{color:var(--mute);margin-bottom:18px;font-size:.9rem}
 .qr-img{width:180px;height:180px;border-radius:14px;border:1px solid rgba(255,201,77,.3);box-shadow:0 10px 40px -12px var(--acc-glow);margin:0 auto;background:#fff;padding:8px}
+.about-credit{text-align:center;font-size:.82rem;color:var(--faint);letter-spacing:1px;margin-top:24px;font-weight:600;opacity:.6}
 
 /* ═══ MENU / JOURNEY ═══ */
 .menu-head{text-align:center;margin-bottom:30px}
