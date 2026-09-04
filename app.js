@@ -47,13 +47,38 @@ function initLanding() {
 
 // ═══ ABOUT ═══
 function initAbout() {
-  $("aboutTitle").textContent = G.about.title;
-  $("aboutLine1").textContent = G.about.line1;
-  $("aboutLine2").textContent = G.about.line2;
-  $("aboutLine3").textContent = G.about.line3;
-  $("aboutLine4").textContent = G.about.line4;
-  $("aboutLine5").textContent = G.about.line5;
-  $("qrImg").src = G.about.qrCode;
+  const a = G.about;
+  $("aboutTitle").textContent = a.title;
+  $("aboutIntro").textContent = a.intro;
+
+  $("aboutVision").innerHTML = `<div class="ab-icon">🎯</div><div><strong>رؤيتنا</strong><p>${esc(a.vision)}</p></div>`;
+  $("aboutMission").innerHTML = `<div class="ab-icon">🚀</div><div><strong>رسالتنا</strong><p>${esc(a.mission)}</p></div>`;
+
+  $("aboutGoals").innerHTML = a.goals.map(g => `<li>${esc(g)}</li>`).join("");
+
+  $("aboutDepts").innerHTML = a.depts.map((d, di) => `
+    <div class="dept-card" onclick="this.classList.toggle('open')">
+      <div class="dept-head">
+        <span class="dept-icon">${d.icon}</span>
+        <div>
+          <div class="dept-name">${esc(d.name)}</div>
+          <div class="dept-desc">${esc(d.desc)}</div>
+        </div>
+        <span class="dept-arrow">▾</span>
+      </div>
+      <div class="dept-comm">
+        ${d.committees.map(c => `
+          <div class="comm-item">
+            <div class="comm-name">• ${esc(c.name)}</div>
+            <div class="comm-desc">${esc(c.desc)}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  $("aboutFlexible").textContent = a.flexible;
+  $("qrImg").src = a.qrCode;
 }
 
 // ═══ MENU ═══
