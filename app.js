@@ -1,728 +1,634 @@
 "use strict";
 
-// ============================================================
-// Innovation Challenge — Game Engine
-// نادي الابتكار - محرك اللعبة التفاعلية
-// ============================================================
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-// ===== STATE =====
-const state = {
-  currentScreen: "landingScreen",
-  completedChallenges: new Set(),
-  
-  // Challenge 1
-  c1: { selectedProblem: null, selectedAudience: null, timer: null, timeLeft: 900 },
-  
-  // Challenge 2
-  c2: { currentDecision: 0, decisions: [], timer: null, timeLeft: 60 },
-  
-  // Challenge 3
-  c3: { selectedPivots: [], timer: null, timeLeft: 600 },
-  
-  // Challenge 4
-  c4: { currentPersona: 0, responses: [], timer: null, timeLeft: 120 }
+// ═══ STATE ═══
+const S = {
+  screen: "landing",
+  completed: new Set(),
+  scores: { creativity: 0, problemSolving: 0, decision: 0, risk: 0, strategy: 0, userFocus: 0, speed: 0 },
+  totalPossible: 0,
+  // C1
+  c1: { problem: null, audience: null, challengeStep: 0, challengeIdx: 0 },
+  // C2
+  c2: { scenario: 0, decided: false, decisions: [], canChange: false },
+  // C3
+  c3: { step: 0, choices: [] },
+  // C4
+  c4: { persona: 0, choices: [] },
+  // Name
+  playerName: ""
 };
 
-// ===== UTILITY =====
-const $ = (id) => document.getElementById(id);
-const esc = (str) => String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
-function shuffleArray(arr) {
-  const shuffled = [...arr];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
-function clearAllTimers() {
-  [state.c1.timer, state.c2.timer, state.c3.timer, state.c4.timer].forEach(t => {
-    if (t) clearInterval(t);
-  });
-}
-
-// ===== SCREEN NAVIGATION =====
-function showScreen(screenId) {
-  clearAllTimers();
+function showScreen(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  $(screenId).classList.add("active");
-  state.currentScreen = screenId;
-  window.scrollTo(0, 0);
+  $(id).classList.add("active");
+  S.screen = id;
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ===== LANDING PAGE =====
-function renderLanding() {
-  $("landingTitle").textContent = GAME_DATA.landing.title;
-  $("landingSubtitle").textContent = GAME_DATA.landing.subtitle;
-
-  const grid = $("entrepreneursGrid");
-  grid.innerHTML = GAME_DATA.landing.entrepreneurs.map(e => `
-    <div class="entrepreneur-card">
-      <img class="entrepreneur-img" src="${esc(e.image)}" alt="${esc(e.name)}" 
-           onerror="this.style.display='none'">
-      <span class="entrepreneur-name">${esc(e.name)}</span>
-      <span class="entrepreneur-company">${esc(e.company)}</span>
-    </div>
-  `).join("");
-}
-
-// ===== ABOUT PAGE =====
-function renderAbout() {
-  $("aboutTitle").textContent = GAME_DATA.about.title;
-  $("aboutSubtitle").textContent = GAME_DATA.about.subtitle;
-  $("aboutDesc").textContent = GAME_DATA.about.description;
-  $("qrImage").src = GAME_DATA.about.qrCode;
-
-  $("achievementsGrid").innerHTML = GAME_DATA.about.achievements.map(a => `
-    <div class="achievement-card">
-      <div class="achievement-icon">${a.icon}</div>
-      <div class="achievement-value">${a.value}</div>
-      <div class="achievement-label">${esc(a.label)}</div>
-    </div>
-  `).join("");
-}
-
-// ===== MENU =====
-function renderMenu() {
-  const completed = state.completedChallenges.size;
-  const total = GAME_DATA.challenges.length;
-  $("menuProgress").style.width = (completed / total * 100) + "%";
-
-  $("challengesGrid").innerHTML = GAME_DATA.challenges.map(c => {
-    const diffClass = c.difficulty === "متوسط" ? "easy" : 
-                      c.difficulty === "صعب" ? "medium" : 
-                      c.difficulty === "صعب جدًا" ? "hard" : "extreme";
-    const isCompleted = state.completedChallenges.has(c.id);
-    
-    return `
-      <div class="challenge-card" style="--c: ${c.color}" onclick="startChallenge('${c.id}')">
-        <div class="challenge-number">${c.number}</div>
-        <div class="challenge-icon">${c.icon}</div>
-        <h3>${esc(c.title)}</h3>
-        <p>${esc(c.description)}</p>
-        <div class="challenge-meta">
-          <span class="difficulty-badge ${diffClass}">${esc(c.difficulty)}</span>
-          <span>⏱️ ${esc(c.time)}</span>
-          ${isCompleted ? '<span style="color: var(--green);">✓ مكتمل</span>' : ''}
-        </div>
+// ═══ LANDING ═══
+function initLanding() {
+  $("landingTitle").textContent = G.landing.title;
+  $("landingSub").textContent = G.landing.subtitle;
+  $("entrepreneursGrid").innerHTML = G.landing.entrepreneurs.map(e => `
+    <div class="e-card">
+      <div class="e-img-wrap">
+        <img class="e-img" src="${esc(e.img)}" alt="${esc(e.name)}" onerror="this.parentElement.innerHTML='<div class=e-fallback>${e.name[0]}</div>'">
       </div>
-    `;
-  }).join("");
+      <div class="e-name">${esc(e.name)}</div>
+      <div class="e-company">${esc(e.company)}</div>
+    </div>
+  `).join("");
 }
 
-// ===== CHALLENGE STARTER =====
+// ═══ ABOUT ═══
+function initAbout() {
+  $("aboutTitle").textContent = G.about.title;
+  $("aboutLine1").textContent = G.about.line1;
+  $("aboutLine2").textContent = G.about.line2;
+  $("aboutLine3").textContent = G.about.line3;
+  $("aboutLine4").textContent = G.about.line4;
+  $("aboutLine5").textContent = G.about.line5;
+  $("qrImg").src = G.about.qrCode;
+}
+
+// ═══ MENU ═══
+function initMenu() {
+  const done = S.completed.size;
+  $("menuProgress").style.width = (done / 4 * 100) + "%";
+  $("challengesGrid").innerHTML = G.challenges.map(c => `
+    <div class="ch-card" style="--c:${c.color}" onclick="startChallenge('${c.id}')">
+      <div class="ch-num">${c.number}</div>
+      <div class="ch-icon">${c.icon}</div>
+      <h3>${esc(c.title)}</h3>
+      <p>${esc(c.desc)}</p>
+      <div class="ch-meta">
+        <span class="diff-badge ${c.diff === 'متوسط' ? 'easy' : c.diff === 'صعب' ? 'med' : 'hard'}">${esc(c.diff)}</span>
+        <span>⏱️ ${esc(c.time)}</span>
+        ${S.completed.has(c.id) ? '<span class="done-badge">✓ مكتمل</span>' : ''}
+      </div>
+    </div>
+  `).join("");
+}
+
+// ═══ START CHALLENGE ═══
 function startChallenge(id) {
-  clearAllTimers();
   switch(id) {
-    case "challenge1": startChallenge1(); break;
-    case "challenge2": startChallenge2(); break;
-    case "challenge3": startChallenge3(); break;
-    case "challenge4": startChallenge4(); break;
+    case "c1": startC1(); break;
+    case "c2": startC2(); break;
+    case "c3": startC3(); break;
+    case "c4": startC4(); break;
   }
 }
 
-// ============================================
-// CHALLENGE 1: PROBLEM + AUDIENCE
-// ============================================
-function startChallenge1() {
-  state.c1 = { selectedProblem: null, selectedAudience: null, timer: null, timeLeft: 900 };
-  showScreen("challenge1Screen");
-
-  $("c1Title").textContent = GAME_DATA.challenge1.title;
-  $("c1Instruction").textContent = GAME_DATA.challenge1.instruction;
-
-  // Shuffle and render problems
-  const problems = shuffleArray(GAME_DATA.challenge1.problems);
-  $("c1ProblemsGrid").innerHTML = problems.map(p => `
-    <div class="card-item" data-type="problem" data-id="${p.id}" onclick="selectCard(this, 'problem', ${p.id})">
-      <div class="card-number">${p.id}</div>
-      <div class="card-icon">${p.icon}</div>
-      <div class="card-title">${esc(p.title)}</div>
-      <div class="card-desc">${esc(p.description)}</div>
+// ═══════════════════════════════════════════
+// C1: PROBLEM + AUDIENCE + INNOVATION
+// ═══════════════════════════════════════════
+function startC1() {
+  S.c1 = { problem: null, audience: null, step: 0, challengeIdx: 0 };
+  showScreen("c1Screen");
+  $("c1Title").textContent = G.c1.title;
+  $("c1Problems").innerHTML = G.c1.problems.map(p => `
+    <div class="sel-card" onclick="selectC1('problem',${p.id},this)">
+      <div class="sel-icon">${p.icon}</div>
+      <div class="sel-title">${esc(p.title)}</div>
+      <div class="sel-desc">${esc(p.desc)}</div>
     </div>
   `).join("");
-
-  // Shuffle and render audiences
-  const audiences = shuffleArray(GAME_DATA.challenge1.audiences);
-  $("c1AudiencesGrid").innerHTML = audiences.map(a => `
-    <div class="card-item" data-type="audience" data-id="${a.id}" onclick="selectCard(this, 'audience', ${a.id})">
-      <div class="card-number">${a.id}</div>
-      <div class="card-icon">${a.icon}</div>
-      <div class="card-title">${esc(a.title)}</div>
-      <div class="card-desc">${esc(a.description)}</div>
+  $("c1Audiences").innerHTML = G.c1.audiences.map(a => `
+    <div class="sel-card" onclick="selectC1('audience',${a.id},this)">
+      <div class="sel-icon">${a.icon}</div>
+      <div class="sel-title">${esc(a.title)}</div>
+      <div class="sel-desc">${esc(a.desc)}</div>
     </div>
   `).join("");
-
-  $("c1SelectedPreview").style.display = "none";
-  $("c1InnovationSection").style.display = "none";
-  startTimer(state.c1, "c1Timer", "c1TimerBar");
+  $("c1Step1").style.display = "block";
+  $("c1Step2").style.display = "none";
+  $("c1Step3").style.display = "none";
 }
 
-function selectCard(el, type, id) {
-  // Remove previous selection of same type
-  document.querySelectorAll(`.card-item[data-type="${type}"]`).forEach(c => c.classList.remove("selected"));
+function selectC1(type, id, el) {
+  document.querySelectorAll(`.sel-card`).forEach(c => c.classList.remove("selected"));
   el.classList.add("selected");
+  if (type === "problem") S.c1.problem = G.c1.problems.find(p => p.id === id);
+  else S.c1.audience = G.c1.audiences.find(a => a.id === id);
 
-  if (type === "problem") {
-    state.c1.selectedProblem = GAME_DATA.challenge1.problems.find(p => p.id === id);
-  } else {
-    state.c1.selectedAudience = GAME_DATA.challenge1.audiences.find(a => a.id === id);
-  }
-
-  updateC1Preview();
-}
-
-function updateC1Preview() {
-  const { selectedProblem, selectedAudience } = state.c1;
-  if (selectedProblem && selectedAudience) {
-    $("c1SelectedPreview").style.display = "flex";
-    $("c1SelectedProblem").innerHTML = `
-      <div class="card-icon">${selectedProblem.icon}</div>
-      <div class="card-title">${esc(selectedProblem.title)}</div>
-      <div class="card-desc">${esc(selectedProblem.description)}</div>
-    `;
-    $("c1SelectedAudience").innerHTML = `
-      <div class="card-icon">${selectedAudience.icon}</div>
-      <div class="card-title">${esc(selectedAudience.title)}</div>
-      <div class="card-desc">${esc(selectedAudience.description)}</div>
-    `;
-    $("c1InnovationSection").style.display = "block";
-  }
-}
-
-function submitChallenge1() {
-  const solution = $("c1InnovationInput").value.trim();
-  if (!solution) {
-    alert("الرجاء كتابة حلّك الابتكاري");
-    return;
-  }
-  
-  state.completedChallenges.add("challenge1");
-  clearAllTimers();
-  
-  showResult("challenge1", {
-    problem: state.c1.selectedProblem,
-    audience: state.c1.selectedAudience,
-    solution: solution,
-    timeUsed: 900 - state.c1.timeLeft
-  });
-}
-
-// ============================================
-// CHALLENGE 2: 60-SECOND DECISIONS
-// ============================================
-function startChallenge2() {
-  state.c2 = { currentDecision: 0, decisions: [], timer: null, timeLeft: 60 };
-  showScreen("challenge2Screen");
-
-  $("c2Instruction").textContent = GAME_DATA.challenge2.instruction;
-  $("c2NextBtn").style.display = "none";
-
-  renderDecision(0);
-  startTimer(state.c2, "c2Timer", "c2TimerBar", 60);
-}
-
-function renderDecision(index) {
-  const scenarios = GAME_DATA.challenge2.scenarios;
-  if (index >= scenarios.length) {
-    finishChallenge2();
-    return;
-  }
-
-  const s = scenarios[index];
-  $("c2DecisionArea").innerHTML = `
-    <div class="decision-card">
-      <div class="decision-number">
-        <span>⚡</span>
-        الموقف ${index + 1} من ${scenarios.length}
+  if (S.c1.problem && S.c1.audience) {
+    $("c1Step1").style.display = "none";
+    $("c1Step2").style.display = "block";
+    $("c1Preview").innerHTML = `
+      <div class="preview-item">
+        <span class="preview-icon">${S.c1.problem.icon}</span>
+        <span class="preview-text">${esc(S.c1.problem.title)}</span>
       </div>
-      <h3 class="decision-title">${esc(s.title)}</h3>
-      <p class="decision-situation">${esc(s.situation)}</p>
-      <div class="decision-options">
-        ${s.options.map((opt, i) => `
-          <button class="decision-option" onclick="selectDecision(${index}, ${i})" data-index="${i}">
-            ${esc(opt.text)}
+      <span class="preview-plus">×</span>
+      <div class="preview-item">
+        <span class="preview-icon">${S.c1.audience.icon}</span>
+        <span class="preview-text">${esc(S.c1.audience.title)}</span>
+      </div>
+    `;
+  }
+}
+
+function startC1Challenge() {
+  $("c1Step2").style.display = "none";
+  $("c1Step3").style.display = "block";
+  renderC1Challenge(0);
+}
+
+function renderC1Challenge(idx) {
+  const ch = G.c1.challenges.find(c =>
+    c.problemId === S.c1.problem.id && c.audienceId === S.c1.audience.id
+  );
+  if (!ch) {
+    // Fallback: pick a random challenge
+    const fallback = G.c1.challenges[idx % G.c1.challenges.length];
+    renderC1Question(fallback);
+    return;
+  }
+  renderC1Question(ch);
+}
+
+function renderC1Question(ch) {
+  S.c1.challengeData = ch;
+  $("c1QuestionArea").innerHTML = `
+    <div class="c1-q-card">
+      <div class="c1-hint">${esc(ch.hint)}</div>
+      <h3 class="c1-question">${esc(ch.question)}</h3>
+      <div class="c1-options">
+        ${ch.options.map((o, i) => `
+          <button class="c1-opt" onclick="answerC1(${i})">
+            <div class="c1-opt-title">${esc(o.text)}</div>
+            <div class="c1-opt-desc">${esc(o.desc)}</div>
           </button>
         `).join("")}
       </div>
-      <div class="follow-up" id="c2FollowUp" style="display: none;"></div>
+      <div id="c1Feedback"></div>
+      <div id="c1Actions" style="display:none">
+        <button class="btn-primary btn-sm" onclick="finishC1()">النتيجة النهائية →</button>
+      </div>
     </div>
   `;
-
-  state.c2.timeLeft = 60;
-  $("c2Timer").textContent = formatTime(60);
-  $("c2TimerBar").style.width = "100%";
-  $("c2TimerBar").className = "timer-bar";
-  $("c2NextBtn").style.display = "none";
 }
 
-function selectDecision(decisionIndex, optionIndex) {
-  const s = GAME_DATA.challenge2.scenarios[decisionIndex];
-  const option = s.options[optionIndex];
-
-  // Visual feedback
-  document.querySelectorAll(".decision-option").forEach((btn, i) => {
-    btn.classList.toggle("selected", i === optionIndex);
-    btn.style.pointerEvents = "none";
+function answerC1(idx) {
+  const ch = S.c1.challengeData;
+  const opt = ch.options[idx];
+  document.querySelectorAll(".c1-opt").forEach((b, i) => {
+    b.classList.remove("selected");
+    b.disabled = true;
+    if (i === ch.correctIndex) b.classList.add("correct");
+    if (i === idx && idx !== ch.correctIndex) b.classList.add("wrong");
   });
-
-  // Record decision
-  state.c2.decisions.push({
-    scenarioId: s.id,
-    optionIndex: optionIndex,
-    trait: option.trait,
-    points: option.points,
-    timeUsed: 60 - state.c2.timeLeft
-  });
-
-  // Show follow-up
-  const followUp = $("c2FollowUp");
-  followUp.textContent = "📢 " + s.followUp;
-  followUp.style.display = "block";
-
-  // Stop timer and show next button
-  clearInterval(state.c2.timer);
-  $("c2NextBtn").style.display = "inline-flex";
-  $("c2NextBtn").textContent = state.c2.currentDecision < GAME_DATA.challenge2.scenarios.length - 1 
-    ? "التالي ←" : "عرض النتيجة ←";
-  
-  state.c2.currentDecision++;
+  S.scores.creativity += opt.points;
+  S.totalPossible += 5;
+  const fb = $("c1Feedback");
+  fb.innerHTML = `
+    <div class="feedback-box ${opt.best ? 'good' : 'bad'}">
+      <div class="fb-icon">${opt.best ? '✅' : '❌'}</div>
+      <div class="fb-text">${esc(opt.feedback)}</div>
+      <div class="fb-risk">${esc(opt.risk)}</div>
+    </div>
+  `;
+  $("c1Actions").style.display = "block";
 }
 
-function nextDecision() {
-  renderDecision(state.c2.currentDecision);
-  startTimer(state.c2, "c2Timer", "c2TimerBar", 60);
+function finishC1() {
+  S.completed.add("c1");
+  showFinalResult();
 }
 
-function finishChallenge2() {
-  clearAllTimers();
-  state.completedChallenges.add("challenge2");
-
-  // Calculate personality
-  const traitCounts = {};
-  let totalPoints = 0;
-  state.c2.decisions.forEach(d => {
-    traitCounts[d.trait] = (traitCounts[d.trait] || 0) + 1;
-    totalPoints += d.points;
-  });
-
-  const dominantTrait = Object.entries(traitCounts)
-    .sort((a, b) => b[1] - a[1])[0][0];
-
-  const personality = GAME_DATA.challenge2.personalityResults[dominantTrait];
-
-  showResult("challenge2", {
-    personality: personality,
-    decisions: state.c2.decisions,
-    totalPoints: totalPoints,
-    maxPoints: GAME_DATA.challenge2.scenarios.length * 4
-  });
+// ═══════════════════════════════════════════
+// C2: PRESSURE DECISIONS
+// ═══════════════════════════════════════════
+function startC2() {
+  S.c2 = { scenario: 0, decided: false, decisions: [], canChange: false };
+  S.scores.decision = 0; S.scores.risk = 0; S.scores.strategy = 0;
+  S.totalPossible = 0;
+  showScreen("c2Screen");
+  renderC2Scenario(0);
 }
 
-// ============================================
-// CHALLENGE 3: DEAD STREET STORE
-// ============================================
-function startChallenge3() {
-  state.c3 = { selectedPivots: [], timer: null, timeLeft: 600 };
-  showScreen("challenge3Screen");
+function renderC2Scenario(idx) {
+  const sc = G.c2.scenarios[idx];
+  if (!sc) { finishC2(); return; }
+  S.c2.decided = false;
+  S.c2.canChange = false;
+  $("c2Title").textContent = `الموقف ${idx + 1} من ${G.c2.scenarios.length}`;
+  $("c2Area").innerHTML = `
+    <div class="c2-scenario">
+      <div class="c2-alert">🚨 أمامك دقيقة لاتخاذ القرار</div>
+      <h3 class="c2-sit-title">${esc(sc.title)}</h3>
+      <p class="c2-situation">${esc(sc.situation)}</p>
+      <div class="c2-hint">${esc(sc.hint)}</div>
+      <div class="c2-options">
+        ${sc.options.map((o, i) => `
+          <button class="c2-opt" id="c2opt${i}" onclick="decideC2(${idx},${i})">
+            <div class="c2-opt-text">${esc(o.text)}</div>
+            <div class="c2-opt-desc">${esc(o.desc)}</div>
+          </button>
+        `).join("")}
+      </div>
+      <div id="c2Feedback"></div>
+      <div id="c2Actions" style="display:none">
+        <button class="btn-primary btn-sm" onclick="nextC2()">التالي ←</button>
+        <button class="btn-outline btn-sm" id="c2ChangeBtn" onclick="changeC2(${idx})" style="display:none">🔄 أريد تغيير قراري</button>
+      </div>
+    </div>
+  `;
+}
 
-  $("c3Instruction").textContent = GAME_DATA.challenge3.instruction;
+function decideC2(scIdx, optIdx) {
+  const sc = G.c2.scenarios[scIdx];
+  const opt = sc.options[optIdx];
 
-  const store = GAME_DATA.challenge3.store;
-  $("c3StoreArea").innerHTML = `
-    <div class="pivot-store">
-      <div class="store-header">
-        <div class="store-icon">🧃</div>
+  document.querySelectorAll(".c2-opt").forEach((b, i) => {
+    b.classList.remove("selected");
+    b.disabled = true;
+  });
+  const btn = $(`c2opt${optIdx}`);
+  btn.classList.add("selected");
+  if (opt.correct) btn.classList.add("correct");
+  else btn.classList.add("wrong");
+
+  // Show correct answer
+  sc.options.forEach((o, i) => {
+    if (o.correct) $(`c2opt${i}`).classList.add("correct");
+  });
+
+  S.scores.decision += opt.points;
+  S.scores.risk += opt.correct ? 5 : 2;
+  S.scores.strategy += opt.points;
+  S.totalPossible += 5;
+
+  S.c2.decisions[scIdx] = { optIdx, points: opt.points };
+  S.c2.decided = true;
+
+  $("c2Feedback").innerHTML = `
+    <div class="feedback-box ${opt.correct ? 'good' : 'bad'}">
+      <div class="fb-icon">${opt.correct ? '✅' : '❌'}</div>
+      <div class="fb-text">${esc(opt.feedback)}</div>
+    </div>
+  `;
+  $("c2Actions").style.display = "flex";
+  $("c2ChangeBtn").style.display = S.c2.decisions.length > 0 ? "inline-flex" : "none";
+}
+
+function changeC2(scIdx) {
+  const sc = G.c2.scenarios[scIdx];
+  const prev = S.c2.decisions[scIdx];
+  S.scores.decision -= prev.points;
+
+  renderC2Scenario(scIdx);
+}
+
+function nextC2() {
+  S.c2.scenario++;
+  renderC2Scenario(S.c2.scenario);
+}
+
+function finishC2() {
+  S.completed.add("c2");
+  showFinalResult();
+}
+
+// ═══════════════════════════════════════════
+// C3: DEAD STREET STORE
+// ═══════════════════════════════════════════
+function startC3() {
+  S.c3 = { step: 0, choices: [] };
+  S.scores.problemSolving = 0; S.scores.creativity = 0;
+  showScreen("c3Screen");
+  renderC3Store();
+}
+
+function renderC3Store() {
+  const st = G.c3.store;
+  $("c3Area").innerHTML = `
+    <div class="c3-store">
+      <div class="c3-store-head">
+        <span class="c3-store-icon">🧃</span>
         <div>
-          <div class="store-name">${esc(store.name)}</div>
-          <div class="store-desc">${esc(store.description)}</div>
+          <div class="c3-store-name">${esc(st.name)}</div>
+          <div class="c3-store-desc">${esc(st.desc)}</div>
         </div>
       </div>
-
-      <div class="problems-list">
-        ${store.problems.map(p => `
-          <span class="problem-tag">${p.icon} ${esc(p.title)} (${esc(p.severity)})</span>
-        `).join("")}
+      <div class="c3-problems">
+        ${st.problems.map(p => `<span class="c3-tag">${esc(p)}</span>`).join("")}
       </div>
-
-      <div class="constraints-box">
+      <div class="c3-constraints">
         <h4>🚫 القواعد الصارمة</h4>
-        <ul class="constraints-list">
-          ${store.constraints.map(c => `<li>${esc(c)}</li>`).join("")}
-        </ul>
+        ${st.constraints.map(c => `<div class="c3-rule">✕ ${esc(c)}</div>`).join("")}
       </div>
+    </div>
+    <button class="btn-primary" onclick="startC3Steps()" style="margin-top:20px">ابدأ التحدي ←</button>
+  `;
+}
 
-      <h3 style="margin-bottom: 16px;">🔄 اختر نهج الـ Pivot</h3>
-      <div class="pivot-options">
-        ${store.pivots.map(p => `
-          <div class="pivot-card" onclick="selectPivot(this, ${p.id})" data-id="${p.id}">
-            <h4>${esc(p.title)}</h4>
-            <p>${esc(p.description)}</p>
-            <div class="pivot-examples">
-              ${p.examples.map(e => `<span class="pivot-example">${esc(e)}</span>`).join("")}
-            </div>
-          </div>
+function startC3Steps() {
+  renderC3Step(0);
+}
+
+function renderC3Step(idx) {
+  const steps = G.c3.steps;
+  if (idx >= steps.length) { finishC3(); return; }
+  const step = steps[idx];
+  $("c3Area").innerHTML = `
+    <div class="c3-step">
+      <div class="c3-hint">${esc(G.c3.hint)}</div>
+      <h3 class="c3-question">${esc(step.question)}</h3>
+      <div class="c3-options">
+        ${step.options.map((o, i) => `
+          <button class="c3-opt" id="c3opt${i}" onclick="answerC3(${idx},${i})">
+            <div class="c3-opt-text">${esc(o.text)}</div>
+            <div class="c3-opt-desc">${esc(o.desc)}</div>
+          </button>
         `).join("")}
       </div>
+      <div id="c3Feedback"></div>
+      <div id="c3Actions" style="display:none">
+        <button class="btn-primary btn-sm" onclick="nextC3Step()">التالي ←</button>
+        <button class="btn-outline btn-sm" id="c3ChangeBtn" onclick="changeC3(${idx})" style="display:none">🔄 أريد تغيير</button>
+      </div>
     </div>
   `;
-
-  $("c3PivotSection").style.display = "block";
-  startTimer(state.c3, "c3Timer", "c3TimerBar", 600);
 }
 
-function selectPivot(el, id) {
-  el.classList.toggle("selected");
-  
-  if (el.classList.contains("selected")) {
-    state.c3.selectedPivots.push(id);
-  } else {
-    state.c3.selectedPivots = state.c3.selectedPivots.filter(p => p !== id);
-  }
-}
+function answerC3(stepIdx, optIdx) {
+  const step = G.c3.steps[stepIdx];
+  const opt = step.options[optIdx];
 
-function submitChallenge3() {
-  const plan = $("c3PivotInput").value.trim();
-  if (!plan) {
-    alert("الرجاء كتابة خطتك لإنقاذ المتجر");
-    return;
-  }
-
-  state.completedChallenges.add("challenge3");
-  clearAllTimers();
-
-  showResult("challenge3", {
-    selectedPivots: state.c3.selectedPivots,
-    plan: plan,
-    timeUsed: 600 - state.c3.timeLeft
+  document.querySelectorAll(".c3-opt").forEach((b, i) => {
+    b.classList.remove("selected");
+    b.disabled = true;
   });
+  $(`c3opt${optIdx}`).classList.add("selected");
+  if (opt.correct) $(`c3opt${optIdx}`).classList.add("correct");
+  else $(`c3opt${optIdx}`).classList.add("wrong");
+
+  step.options.forEach((o, i) => {
+    if (o.correct) $(`c3opt${i}`).classList.add("correct");
+  });
+
+  S.scores.problemSolving += opt.points;
+  S.scores.creativity += opt.points;
+  S.totalPossible += 5;
+
+  S.c3.choices[stepIdx] = { optIdx, points: opt.points };
+
+  $("c3Feedback").innerHTML = `
+    <div class="feedback-box ${opt.correct ? 'good' : 'bad'}">
+      <div class="fb-icon">${opt.correct ? '✅' : '❌'}</div>
+      <div class="fb-text">${esc(opt.feedback)}</div>
+    </div>
+  `;
+  $("c3Actions").style.display = "flex";
+  if (stepIdx > 0) $("c3ChangeBtn").style.display = "inline-flex";
 }
 
-// ============================================
-// CHALLENGE 4: CONVINCE ME
-// ============================================
-function startChallenge4() {
-  state.c4 = { currentPersona: 0, responses: [], timer: null, timeLeft: 120 };
-  showScreen("challenge4Screen");
+function changeC3(stepIdx) {
+  const prev = S.c3.choices[stepIdx];
+  S.scores.problemSolving -= prev.points;
+  S.scores.creativity -= prev.points;
+  renderC3Step(stepIdx);
+}
 
-  $("c4Instruction").textContent = GAME_DATA.challenge4.instruction;
+function nextC3Step() {
+  S.c3.step++;
+  renderC3Step(S.c3.step);
+}
 
-  // Show product
-  const product = GAME_DATA.challenge4.product;
-  $("c4ProductDisplay").innerHTML = `
-    <div class="store-header">
-      <div class="store-icon">🧤</div>
+function finishC3() {
+  S.completed.add("c3");
+  showFinalResult();
+}
+
+// ═══════════════════════════════════════════
+// C4: CONVINCE ME
+// ═══════════════════════════════════════════
+function startC4() {
+  S.c4 = { persona: 0, choices: [] };
+  S.scores.userFocus = 0;
+  showScreen("c4Screen");
+  $("c4Product").innerHTML = `
+    <div class="c4-product">
+      <span class="c4-prod-icon">🧤</span>
       <div>
-        <div class="store-name">${esc(product.name)}</div>
-        <div class="store-desc">${esc(product.description)}</div>
+        <div class="c4-prod-name">${esc(G.c4.product)}</div>
       </div>
     </div>
   `;
-
-  renderPersona(0);
-  renderPersonaNav();
-  startTimer(state.c4, "c4Timer", "c4TimerBar", 120);
+  renderC4Persona(0);
 }
 
-function renderPersona(index) {
-  const personas = GAME_DATA.challenge4.personas;
-  if (index >= personas.length) {
-    $("c4PersonaArea").innerHTML = '<p style="text-align:center;color:var(--accent);font-size:1.1rem;">✅ لقد أكملت جميع الشخصيات!</p>';
-    $("c4SubmitBtn").style.display = "inline-flex";
-    clearInterval(state.c4.timer);
-    return;
-  }
-
-  const p = personas[index];
-  $("c4PersonaArea").innerHTML = `
-    <div class="persona-card">
-      <div class="persona-header">
-        <div class="persona-avatar">${p.icon}</div>
-        <div class="persona-info">
-          <h3>${esc(p.name)}</h3>
-          <span class="persona-role">${esc(p.role)}</span>
+function renderC4Persona(idx) {
+  const personas = G.c4.personas;
+  if (idx >= personas.length) { finishC4(); return; }
+  const p = personas[idx];
+  $("c4Area").innerHTML = `
+    <div class="c4-persona">
+      <div class="c4-p-head">
+        <div class="c4-p-avatar">${p.icon}</div>
+        <div>
+          <div class="c4-p-name">${esc(p.name)}</div>
+          <div class="c4-p-role">${esc(p.role)}</div>
         </div>
       </div>
-      <div class="persona-personality">
-        <strong>الشخصية:</strong> ${esc(p.personality)}
+      <div class="c4-p-challenge">"${esc(p.challenge)}"</div>
+      <div class="c4-hint">${esc(p.hint)}</div>
+      <div class="c4-options">
+        ${p.options.map((o, i) => `
+          <button class="c4-opt" id="c4opt${i}" onclick="answerC4(${idx},${i})">
+            <div class="c4-opt-text">${esc(o.text)}</div>
+            <div class="c4-opt-desc">${esc(o.desc)}</div>
+          </button>
+        `).join("")}
       </div>
-      <div class="persona-challenge">
-        "${esc(p.challenge)}"
+      <div id="c4Feedback"></div>
+      <div id="c4Actions" style="display:none">
+        <button class="btn-primary btn-sm" onclick="nextC4()">التالي ←</button>
+        <button class="btn-outline btn-sm" id="c4ChangeBtn" onclick="changeC4(${idx})" style="display:none">🔄 أريد تغيير</button>
       </div>
-      <div class="persona-hints">
-        <h4>💡 اقتراحات:</h4>
-        <div class="hint-tags">
-          ${p.hints.map(h => `<span class="hint-tag">${esc(h)}</span>`).join("")}
-        </div>
-      </div>
-      <textarea class="persona-input" id="c4Response" 
-                placeholder="اكتب كيف ستقنع ${esc(p.name)} بالمنتج..."></textarea>
     </div>
   `;
-
-  renderPersonaNav();
+  renderC4Nav(idx);
 }
 
-function renderPersonaNav() {
-  const personas = GAME_DATA.challenge4.personas;
-  $("c4PersonaNav").innerHTML = personas.map((p, i) => {
-    let cls = "persona-dot";
-    if (i === state.c4.currentPersona) cls += " active";
-    else if (i < state.c4.currentPersona) cls += " done";
-    return `<div class="${cls}" onclick="goToPersona(${i})"></div>`;
+function answerC4(personaIdx, optIdx) {
+  const p = G.c4.personas[personaIdx];
+  const opt = p.options[optIdx];
+
+  document.querySelectorAll(".c4-opt").forEach((b, i) => {
+    b.classList.remove("selected");
+    b.disabled = true;
+  });
+  $(`c4opt${optIdx}`).classList.add("selected");
+  if (opt.correct) $(`c4opt${optIdx}`).classList.add("correct");
+  else $(`c4opt${optIdx}`).classList.add("wrong");
+
+  p.options.forEach((o, i) => {
+    if (o.correct) $(`c4opt${i}`).classList.add("correct");
+  });
+
+  S.scores.userFocus += opt.points;
+  S.totalPossible += 5;
+  S.c4.choices[personaIdx] = { optIdx, points: opt.points };
+
+  $("c4Feedback").innerHTML = `
+    <div class="feedback-box ${opt.correct ? 'good' : 'bad'}">
+      <div class="fb-icon">${opt.correct ? '✅' : '❌'}</div>
+      <div class="fb-text">${esc(opt.feedback)}</div>
+    </div>
+  `;
+  $("c4Actions").style.display = "flex";
+  if (personaIdx > 0) $("c4ChangeBtn").style.display = "inline-flex";
+}
+
+function changeC4(personaIdx) {
+  const prev = S.c4.choices[personaIdx];
+  S.scores.userFocus -= prev.points;
+  renderC4Persona(personaIdx);
+}
+
+function nextC4() {
+  S.c4.persona++;
+  renderC4Persona(S.c4.persona);
+}
+
+function renderC4Nav(current) {
+  $("c4Nav").innerHTML = G.c4.personas.map((_, i) => {
+    let cls = "nav-dot";
+    if (i === current) cls += " active";
+    else if (i < current) cls += " done";
+    return `<div class="${cls}"></div>`;
   }).join("");
 }
 
-function goToPersona(index) {
-  // Save current response
-  saveCurrentResponse();
-  
-  state.c4.currentPersona = index;
-  renderPersona(index);
-  
-  if (index < state.c4.responses.length) {
-    $("c4Response").value = state.c4.responses[index] || "";
-  }
+function finishC4() {
+  S.completed.add("c4");
+  showFinalResult();
 }
 
-function saveCurrentResponse() {
-  const input = $("c4Response");
-  if (input) {
-    state.c4.responses[state.c4.currentPersona] = input.value;
-  }
-}
-
-function submitChallenge4() {
-  saveCurrentResponse();
-  
-  // Check all responses
-  const emptyCount = state.c4.responses.filter(r => !r || r.trim() === "").length;
-  if (emptyCount > 0) {
-    if (!confirm(`لديك ${emptyCount} شخصية لم تُجب عنها. هل تريد الإرسال؟`)) {
-      return;
-    }
-  }
-
-  state.completedChallenges.add("challenge4");
-  clearAllTimers();
-
-  showResult("challenge4", {
-    responses: state.c4.responses,
-    personas: GAME_DATA.challenge4.personas
-  });
-}
-
-// ============================================
-// TIMER SYSTEM
-// ============================================
-function startTimer(timerState, displayId, barId, duration) {
-  if (timerState.timer) clearInterval(timerState.timer);
-  
-  const totalDuration = duration || timerState.timeLeft;
-  
-  timerState.timer = setInterval(() => {
-    timerState.timeLeft--;
-    
-    $(displayId).textContent = formatTime(timerState.timeLeft);
-    
-    const pct = (timerState.timeLeft / totalDuration) * 100;
-    $(barId).style.width = pct + "%";
-    
-    // Color changes
-    if (pct <= 20) {
-      $(barId).className = "timer-bar danger";
-      $(displayId).classList.add("urgent");
-      $(displayId).classList.remove("warning");
-    } else if (pct <= 50) {
-      $(barId).className = "timer-bar warning";
-      $(displayId).classList.add("warning");
-      $(displayId).classList.remove("urgent");
-    } else {
-      $(barId).className = "timer-bar";
-      $(displayId).classList.remove("urgent", "warning");
-    }
-    
-    if (timerState.timeLeft <= 0) {
-      clearInterval(timerState.timer);
-      // Auto-submit or next
-      if (displayId === "c2Timer") {
-        // Auto-select first option if no selection
-        const currentScenario = GAME_DATA.challenge2.scenarios[state.c2.currentDecision];
-        if (currentScenario && !state.c2.decisions.find(d => d.scenarioId === currentScenario.id)) {
-          selectDecision(state.c2.currentDecision, 0);
-        }
-      }
-    }
-  }, 1000);
-}
-
-// ============================================
-// RESULT SCREEN
-// ============================================
-function showResult(challengeId, data) {
+// ═══════════════════════════════════════════
+// FINAL RESULT
+// ═══════════════════════════════════════════
+function showFinalResult() {
   showScreen("resultScreen");
-
-  switch(challengeId) {
-    case "challenge1":
-      showChallenge1Result(data);
-      break;
-    case "challenge2":
-      showChallenge2Result(data);
-      break;
-    case "challenge3":
-      showChallenge3Result(data);
-      break;
-    case "challenge4":
-      showChallenge4Result(data);
-      break;
-  }
+  renderFinalResult();
 }
 
-function showChallenge1Result(data) {
-  $("resultBadge").innerHTML = '<span>🎯</span> <span>تم إرسال حلّك!</span>';
-  $("resultIcon").textContent = "🎯";
-  $("resultType").textContent = "مبتكر مشكلات";
-  $("resultDesc").innerHTML = `
-    لقد اخترت مشكلة <strong>${esc(data.problem.title)}</strong> لجمهور <strong>${esc(data.audience.title)}</strong>.
-    <br><br>
-    <strong>حلّك:</strong> ${esc(data.solution)}
-    <br><br>
-    الوقت المستخدم: ${Math.floor(data.timeUsed / 60)} دقيقة و ${data.timeUsed % 60} ثانية
-  `;
-  $("resultMatch").innerHTML = '💡 <strong>تذكّر:</strong> أبرز رواد الأعمال يبدأون بفهم المشكلة قبل الحل';
+function renderFinalResult() {
+  // Calculate personality
+  const maxScore = S.totalPossible || 1;
+  const total = S.scores.creativity + S.scores.problemSolving + S.scores.decision + S.scores.risk + S.scores.strategy + S.scores.userFocus + S.scores.speed;
+  const pct = Math.round((total / (maxScore * 7)) * 100);
 
-  $("scoreSection").innerHTML = `
-    <h3 class="score-title">📊 تقييم الأداء</h3>
-    ${GAME_DATA.challenge1.evaluationCriteria.map(c => {
-      const score = Math.floor(Math.random() * 30) + 70;
-      return `
-        <div class="score-bar-container">
-          <div class="score-bar-label">
-            <span>${esc(c.name)}</span>
-            <span>${score}%</span>
-          </div>
-          <div class="score-bar-track">
-            <div class="score-bar-fill" style="width: ${score}%"></div>
-          </div>
-        </div>
-      `;
-    }).join("")}
-  `;
-}
+  let personaKey = "innovator_fast";
+  const scores = S.scores;
+  if (scores.userFocus >= scores.decision && scores.userFocus >= scores.creativity) personaKey = "innovator_user";
+  else if (scores.strategy >= scores.risk && scores.strategy >= scores.speed) personaKey = "innovator_strategic";
+  else if (scores.creativity >= scores.decision && scores.creativity >= scores.risk) personaKey = "innovator_creative";
+  else if (scores.risk >= scores.strategy && scores.risk >= scores.userFocus) personaKey = "innovator_bold";
 
-function showChallenge2Result(data) {
-  const p = data.personality;
-  $("resultBadge").innerHTML = '<span>⚡</span> <span>تحليل الشخصية الريادية</span>';
-  $("resultIcon").textContent = p.icon;
-  $("resultType").textContent = p.type;
-  $("resultType").style.color = p.color;
-  $("resultDesc").textContent = p.description;
-  $("resultMatch").innerHTML = `🎯 <strong>أنت تشبه:</strong> ${esc(p.match)}`;
+  const p = G.personalities[personaKey];
 
-  $("scoreSection").innerHTML = `
-    <h3 class="score-title">📊 ملخص القرارات</h3>
-    <div style="text-align: center; margin-bottom: 20px;">
-      <span style="font-size: 2rem; font-weight: 900; color: ${p.color};">${data.totalPoints}/${data.maxPoints}</span>
-      <br>
-      <span style="color: var(--muted); font-size: .9rem;">نقاط الأداء تحت الضغط</span>
+  // Name input area
+  $("resultContent").innerHTML = `
+    <div class="r-personality" style="--pc:${p.color}">
+      <div class="r-badge">${esc(p.icon)} <span>من أنت كمبتكر؟</span></div>
+      <div class="r-icon">${esc(p.icon)}</div>
+      <h1 class="r-type">${esc(p.type)}</h1>
+      <p class="r-desc">${esc(p.desc)}</p>
     </div>
-    ${data.decisions.map((d, i) => {
-      const scenario = GAME_DATA.challenge2.scenarios[i];
-      return `
-        <div class="score-bar-container">
-          <div class="score-bar-label">
-            <span>${scenario.title}</span>
-            <span>${d.points}/4 • ${d.timeUsed}s</span>
-          </div>
-          <div class="score-bar-track">
-            <div class="score-bar-fill" style="width: ${d.points * 25}%; background: ${p.color}"></div>
-          </div>
+
+    <div class="r-match">
+      <div class="r-match-title">مبتكر يشبهك</div>
+      <div class="r-match-card">
+        <img class="r-match-img" src="${esc(p.matchImg)}" alt="${esc(p.match)}" onerror="this.style.display='none'">
+        <div>
+          <div class="r-match-name">أنت تشبه: <strong>${esc(p.match)}</strong></div>
+          <div class="r-match-reason">${esc(p.matchReason)}</div>
         </div>
-      `;
-    }).join("")}
-  `;
-}
-
-function showChallenge3Result(data) {
-  $("resultBadge").innerHTML = '<span>🏪</span> <span>خطة الإنقاذ</span>';
-  $("resultIcon").textContent = "🔄";
-  $("resultType").textContent = "محوّل استراتيجي";
-  $("resultType").style.color = "var(--green)";
-  $("resultDesc").innerHTML = `
-    لقد اخترت <strong>${data.selectedPivots.length}</strong> نهج pivot لإنقاذ المتجر.
-    <br><br>
-    <strong>خطتك:</strong> ${esc(data.plan)}
-    <br><br>
-    الوقت المستخدم: ${Math.floor(data.timeUsed / 60)} دقيقة و ${data.timeUsed % 60} ثانية
-  `;
-  $("resultMatch").innerHTML = '💡 <strong>تذكّر:</strong> Pivot ليس هروبًا — هو تغيير استراتيجي بذكاء';
-
-  const pivotNames = data.selectedPivots.map(id => {
-    const pivot = GAME_DATA.challenge3.store.pivots.find(p => p.id === id);
-    return pivot ? pivot.title : "";
-  }).filter(Boolean);
-
-  $("scoreSection").innerHTML = `
-    <h3 class="score-title">📊 نهج الـ Pivot المختار</h3>
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px;">
-      ${pivotNames.map(name => `
-        <span style="background: rgba(91,199,143,.15); color: var(--green); padding: 6px 16px; border-radius: 999px; font-size: .9rem;">
-          ${esc(name)}
-        </span>
-      `).join("")}
-    </div>
-    <p style="text-align: center; color: var(--muted); font-size: .9rem;">
-      النجاح في ريادة الأعمال ليس في تجنب الفشل، بل في كيفية التعامل معه
-    </p>
-  `;
-}
-
-function showChallenge4Result(data) {
-  $("resultBadge").innerHTML = '<span>💬</span> <span>تحليل مهارات الإقناع</span>';
-  $("resultIcon").textContent = "🎤";
-  $("resultType").textContent = "مُقنع متعدد الأنماط";
-  $("resultType").style.color = "var(--blue)";
-
-  const filledResponses = data.responses.filter(r => r && r.trim()).length;
-  $("resultDesc").innerHTML = `
-    لقد تواصلت مع <strong>${filledResponses}</strong> من <strong>${data.personas.length}</strong> شخصيات مختلفة.
-    <br>
-    كل شخصية كانت تحتاج منطقًا وطريقة مختلفة — وهذه هي مهارة الإقناع الحقيقية.
-  `;
-  $("resultMatch").innerHTML = '💡 <strong>تذكّر:</strong> ليس هناك منطق واحد يصلح للجميع — الفهم العميق للعميل هو المفتاح';
-
-  $("scoreSection").innerHTML = `
-    <h3 class="score-title">📊 ردودك على الشخصيات</h3>
-    ${data.personas.map((p, i) => `
-      <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-soft); border-radius: 10px;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-          <span>${p.icon}</span>
-          <strong>${esc(p.name)}</strong>
-          <span style="color: var(--muted); font-size: .8rem;">${esc(p.role)}</span>
-        </div>
-        <p style="font-size: .85rem; color: var(--muted); line-height: 1.6;">
-          ${data.responses[i] ? esc(data.responses[i]) : '<em>لم يُجب</em>'}
-        </p>
       </div>
-    `).join("")}
+    </div>
+
+    <div class="r-advice">
+      <div class="r-advice-title">💡 نصيحتك كمبتكر</div>
+      <div class="r-advice-text">${esc(p.advice)}</div>
+    </div>
+
+    <div class="r-scores">
+      <div class="r-scores-title">أداؤك كمبتكر</div>
+      ${renderScoreBar("الإبداع", scores.creativity, 15)}
+      ${renderScoreBar("حل المشكلات", scores.problemSolving, 15)}
+      ${renderScoreBar("اتخاذ القرار", scores.decision, 15)}
+      ${renderScoreBar("التفكير الاستراتيجي", scores.strategy, 15)}
+      ${renderScoreBar("فهم الجمهور", scores.userFocus, 15)}
+      ${renderScoreBar("تقبل المخاطر", scores.risk, 15)}
+      <div class="r-total">
+        <span> نتيجتك النهائية</span>
+        <span class="r-total-num">${Math.min(pct, 100)} / 100</span>
+      </div>
+    </div>
+
+    <div class="r-name-section">
+      <div class="r-name-label">✍️ اكتب اسمك لإنشاء بطاقتك</div>
+      <input class="r-name-input" id="playerNameInput" placeholder="اسمك هنا..." maxlength="30">
+      <button class="btn-primary" onclick="generateCard()">إنشاء البطاقة ←</button>
+    </div>
   `;
 }
 
-// ============================================
-// INITIALIZATION =====
-// ============================================
-function init() {
-  renderLanding();
-  renderAbout();
-  renderMenu();
+function renderScoreBar(label, value, max) {
+  const pct = Math.min(Math.round((value / max) * 100), 100);
+  const stars = pct >= 80 ? "⭐⭐⭐⭐⭐" : pct >= 60 ? "⭐⭐⭐⭐☆" : pct >= 40 ? "⭐⭐⭐☆☆" : pct >= 20 ? "⭐⭐☆☆☆" : "⭐☆☆☆☆";
+  return `
+    <div class="score-row">
+      <div class="score-label">${esc(label)}</div>
+      <div class="score-stars">${stars}</div>
+    </div>
+  `;
 }
 
-// Run on load
+// ═══ SHAREABLE CARD ═══
+function generateCard() {
+  const name = $("playerNameInput").value.trim();
+  if (!name) { alert("الرجاء كتابة اسمك"); return; }
+  S.playerName = name;
+
+  const maxScore = S.totalPossible || 1;
+  const total = S.scores.creativity + S.scores.problemSolving + S.scores.decision + S.scores.risk + S.scores.strategy + S.scores.userFocus + S.scores.speed;
+  const pct = Math.round((total / (maxScore * 7)) * 100);
+
+  let personaKey = "innovator_fast";
+  const scores = S.scores;
+  if (scores.userFocus >= scores.decision && scores.userFocus >= scores.creativity) personaKey = "innovator_user";
+  else if (scores.strategy >= scores.risk && scores.strategy >= scores.speed) personaKey = "innovator_strategic";
+  else if (scores.creativity >= scores.decision && scores.creativity >= scores.risk) personaKey = "innovator_creative";
+  else if (scores.risk >= scores.strategy && scores.risk >= scores.userFocus) personaKey = "innovator_bold";
+
+  const p = G.personalities[personaKey];
+
+  $("cardName").textContent = name;
+  $("cardType").textContent = p.type;
+  $("cardIcon").textContent = p.icon;
+  $("cardScore").textContent = Math.min(pct, 100) + "/100";
+  $("cardMatch").textContent = "يشبه: " + p.match;
+  $("cardDesc").textContent = p.desc;
+  $("cardOverlay").style.display = "flex";
+}
+
+function closeCard() {
+  $("cardOverlay").style.display = "none";
+}
+
+// ═══ INIT ═══
+function init() {
+  initLanding();
+  initAbout();
+  initMenu();
+}
+
 init();
