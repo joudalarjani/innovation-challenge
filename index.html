@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>هل أنت رائد أعمال المستقبل؟ | نادي الابتكار</title>
+  <meta name="description" content="تحديات تفاعلية في ريادة الأعمال — اختبر قراراتك في عالم الشركات الحقيقية">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80' fill='%23E8B547'%3E🚀%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ===== LANDING SCREEN ===== -->
+  <div id="landingScreen" class="screen active">
+    <div class="landing">
+      <div class="landing-badge">
+        <span>🚀</span>
+        <span>نادي الابتكار — تحديات ريادة الأعمال</span>
+      </div>
+
+      <h1 class="landing-title" id="landingTitle"></h1>
+      <p class="landing-subtitle" id="landingSubtitle"></p>
+
+      <div class="entrepreneurs-grid" id="entrepreneursGrid"></div>
+
+      <div class="landing-actions">
+        <button class="btn btn-primary" onclick="showScreen('aboutScreen')">
+          <span>ℹ️</span>
+          <span>نبذة عن النادي</span>
+        </button>
+        <button class="btn btn-secondary" onclick="showScreen('menuScreen')">
+          <span>⚡</span>
+          <span>ابدأ التحدي</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ABOUT SCREEN ===== -->
+  <div id="aboutScreen" class="screen">
+    <div class="about-screen">
+      <button class="btn-back" onclick="showScreen('landingScreen')">← العودة</button>
+
+      <div class="about-header" style="margin-top: 24px;">
+        <div class="about-logo">💡</div>
+        <h2 class="about-title" id="aboutTitle"></h2>
+        <p class="about-subtitle" id="aboutSubtitle"></p>
+      </div>
+
+      <p class="about-desc" id="aboutDesc"></p>
+
+      <div class="achievements-grid" id="achievementsGrid"></div>
+
+      <div class="qr-section">
+        <h3>📝 سجّل الآن</h3>
+        <p>امسح الكود للانضمام لنادي الابتكار</p>
+        <img id="qrImage" class="qr-image" src="" alt="QR Code التسجيل">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MENU SCREEN ===== -->
+  <div id="menuScreen" class="screen">
+    <div class="menu-screen">
+      <button class="btn-back" onclick="showScreen('landingScreen')">← العودة</button>
+
+      <div class="menu-header" style="margin-top: 24px;">
+        <h2 class="menu-title">اختر تحدّيك</h2>
+        <p class="menu-subtitle">كل تحدي يختبر مهارة مختلفة في ريادة الأعمال</p>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="menuProgress" style="width: 0%"></div>
+      </div>
+
+      <div class="challenges-grid" id="challengesGrid"></div>
+    </div>
+  </div>
+
+  <!-- ===== CHALLENGE 1: PROBLEM + AUDIENCE ===== -->
+  <div id="challenge1Screen" class="screen">
+    <div class="game-screen">
+      <div class="game-header">
+        <div>
+          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+          <h2 class="game-title" id="c1Title"></h2>
+        </div>
+        <div class="timer-display" id="c1Timer">15:00</div>
+      </div>
+
+      <div class="game-instruction" id="c1Instruction"></div>
+
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="c1TimerBar" style="width: 100%"></div>
+      </div>
+
+      <!-- Problems Section -->
+      <div class="cards-section">
+        <h3>🔴 اختر مشكلة</h3>
+        <div class="cards-grid" id="c1ProblemsGrid"></div>
+      </div>
+
+      <!-- Audiences Section -->
+      <div class="cards-section">
+        <h3>👥 اختر جمهورًا</h3>
+        <div class="cards-grid" id="c1AudiencesGrid"></div>
+      </div>
+
+      <!-- Selected Preview -->
+      <div class="selected-cards" id="c1SelectedPreview" style="display: none;">
+        <div class="selected-card-preview" id="c1SelectedProblem"></div>
+        <div class="plus-sign">+</div>
+        <div class="selected-card-preview" id="c1SelectedAudience"></div>
+      </div>
+
+      <!-- Innovation Input -->
+      <div class="pivot-input-section" id="c1InnovationSection" style="display: none;">
+        <h4>💡 صمّم حلّك الابتكاري</h4>
+        <textarea class="pivot-input" id="c1InnovationInput" placeholder="كيف ستحل هذه المشكلة لهذا الجمهور بطريقة ابتكارية؟"></textarea>
+        <br><br>
+        <button class="btn btn-primary" onclick="submitChallenge1()">أرسل حلّك</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHALLENGE 2: 60-SECOND DECISIONS ===== -->
+  <div id="challenge2Screen" class="screen">
+    <div class="game-screen">
+      <div class="game-header">
+        <div>
+          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+          <h2 class="game-title">قرارات تحت الضغط</h2>
+        </div>
+        <div class="timer-display" id="c2Timer">01:00</div>
+      </div>
+
+      <div class="game-instruction" id="c2Instruction"></div>
+
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="c2TimerBar" style="width: 100%"></div>
+      </div>
+
+      <div id="c2DecisionArea"></div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn btn-primary" id="c2NextBtn" style="display: none;" onclick="nextDecision()">التالي ←</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHALLENGE 3: DEAD STREET STORE ===== -->
+  <div id="challenge3Screen" class="screen">
+    <div class="game-screen">
+      <div class="game-header">
+        <div>
+          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+          <h2 class="game-title">محل في شارع ميت</h2>
+        </div>
+        <div class="timer-display" id="c3Timer">10:00</div>
+      </div>
+
+      <div class="game-instruction" id="c3Instruction"></div>
+
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="c3TimerBar" style="width: 100%"></div>
+      </div>
+
+      <div id="c3StoreArea"></div>
+
+      <div class="pivot-input-section" id="c3PivotSection" style="display: none;">
+        <h4>📝 اكتب خطتك لإنقاذ المتجر</h4>
+        <textarea class="pivot-input" id="c3PivotInput" placeholder="كيف ستغير المنتج أو العميل أو التجربة أو نموذج العمل أو التسويق لإنقاذ هذا المتجر؟"></textarea>
+        <br><br>
+        <button class="btn btn-primary" onclick="submitChallenge3()">أرسل خطتك</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CHALLENGE 4: CONVINCE ME ===== -->
+  <div id="challenge4Screen" class="screen">
+    <div class="game-screen">
+      <div class="game-header">
+        <div>
+          <button class="btn-back" onclick="showScreen('menuScreen')">← العودة</button>
+          <h2 class="game-title">أقنعني</h2>
+        </div>
+        <div class="timer-display" id="c4Timer">02:00</div>
+      </div>
+
+      <div class="game-instruction" id="c4Instruction"></div>
+
+      <div class="timer-bar-container">
+        <div class="timer-bar" id="c4TimerBar" style="width: 100%"></div>
+      </div>
+
+      <!-- Product Display -->
+      <div class="pivot-store" id="c4ProductDisplay"></div>
+
+      <div id="c4PersonaArea"></div>
+
+      <div class="persona-nav" id="c4PersonaNav"></div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn btn-primary" id="c4SubmitBtn" style="display: none;" onclick="submitChallenge4()">أرسل إجاباتك</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div id="resultScreen" class="screen">
+    <div class="result-screen">
+      <div class="result-badge" id="resultBadge"></div>
+      <div class="result-icon" id="resultIcon"></div>
+      <h1 class="result-type" id="resultType"></h1>
+      <p class="result-description" id="resultDesc"></p>
+      <div class="result-match" id="resultMatch"></div>
+
+      <div class="score-section" id="scoreSection"></div>
+
+      <div class="result-actions">
+        <button class="btn btn-primary" onclick="showScreen('menuScreen')">挑战 آخر</button>
+        <button class="btn btn-secondary" onclick="showScreen('landingScreen')">الرئيسية</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
