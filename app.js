@@ -32,15 +32,17 @@ function showScreen(id) {
 function initLanding() {
   $("landingTitle").textContent = G.landing.title;
   $("landingSub").textContent = G.landing.subtitle;
-  $("entrepreneursGrid").innerHTML = G.landing.entrepreneurs.map(e => `
-    <div class="e-card">
+  $("entrepreneursGrid").innerHTML = G.landing.entrepreneurs.map(e => {
+    const fallback = e.name[0];
+    return `<div class="e-card">
       <div class="e-img-wrap">
-        <img class="e-img" src="${esc(e.img)}" alt="${esc(e.name)}" onerror="this.parentElement.innerHTML='<div class=e-fallback>${e.name[0]}</div>'">
+        <img class="e-img" src="${esc(e.img)}" alt="${esc(e.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+        <div class="e-fallback" style="display:none">${fallback}</div>
       </div>
       <div class="e-name">${esc(e.name)}</div>
       <div class="e-company">${esc(e.company)}</div>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 }
 
 // ═══ ABOUT ═══
