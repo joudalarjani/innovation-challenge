@@ -11,7 +11,7 @@ const S = {
   scores: { creativity: 0, problemSolving: 0, decision: 0, risk: 0, strategy: 0, userFocus: 0, speed: 0 },
   totalPossible: 0,
   // C1
-  c1: { problem: null, audience: null, challengeStep: 0, challengeIdx: 0 },
+  c1: { selectedProblem: null, selectedAudience: null, challengeStep: 0, challengeIdx: 0 },
   // C2
   c2: { scenario: 0, decided: false, decisions: [], canChange: false },
   // C3
@@ -84,7 +84,6 @@ function initAbout() {
   `).join("");
 
   $("aboutFlexible").textContent = a.flexible;
-  $("qrImg").src = a.qrCode;
 }
 
 // ═══ MENU ═══
@@ -141,7 +140,7 @@ function startChallenge(id) {
 // C1: PROBLEM + AUDIENCE + INNOVATION
 // ═══════════════════════════════════════════
 function startC1() {
-  S.c1 = { problem: null, audience: null, step: 0, challengeIdx: 0 };
+  S.c1 = { selectedProblem: null, selectedAudience: null, challengeStep: 0, challengeIdx: 0 };
   showScreen("c1Screen");
   $("c1Title").textContent = G.c1.title;
   $("c1Problems").innerHTML = G.c1.problems.map(p => `
@@ -166,21 +165,21 @@ function startC1() {
 function selectC1(type, id, el) {
   document.querySelectorAll(`.sel-card`).forEach(c => c.classList.remove("selected"));
   el.classList.add("selected");
-  if (type === "problem") S.c1.problem = G.c1.problems.find(p => p.id === id);
-  else S.c1.audience = G.c1.audiences.find(a => a.id === id);
+  if (type === "problem") S.c1.selectedProblem = G.c1.problems.find(p => p.id === id);
+  else S.c1.selectedAudience = G.c1.audiences.find(a => a.id === id);
 
-  if (S.c1.problem && S.c1.audience) {
+  if (S.c1.selectedProblem && S.c1.selectedAudience) {
     $("c1Step1").style.display = "none";
     $("c1Step2").style.display = "block";
     $("c1Preview").innerHTML = `
       <div class="preview-item">
-        <span class="preview-icon">${S.c1.problem.icon}</span>
-        <span class="preview-text">${esc(S.c1.problem.title)}</span>
+        <span class="preview-icon">${S.c1.selectedProblem.icon}</span>
+        <span class="preview-text">${esc(S.c1.selectedProblem.title)}</span>
       </div>
       <span class="preview-plus">×</span>
       <div class="preview-item">
-        <span class="preview-icon">${S.c1.audience.icon}</span>
-        <span class="preview-text">${esc(S.c1.audience.title)}</span>
+        <span class="preview-icon">${S.c1.selectedAudience.icon}</span>
+        <span class="preview-text">${esc(S.c1.selectedAudience.title)}</span>
       </div>
     `;
   }
@@ -189,26 +188,49 @@ function selectC1(type, id, el) {
 function startC1Challenge() {
   $("c1Step2").style.display = "none";
   $("c1Step3").style.display = "block";
-  renderC1Challenge(0);
+  const ch = getC1Scenario();
+  if (ch) renderC1Question(ch);
 }
 
-function renderC1Challenge(idx) {
-  const ch = G.c1.challenges.find(c =>
-    c.problemId === S.c1.problem.id && c.audienceId === S.c1.audience.id
-  );
-  if (!ch) {
-    // Fallback: pick a random challenge
-    const fallback = G.c1.challenges[idx % G.c1.challenges.length];
-    renderC1Question(fallback);
-    return;
-  }
-  renderC1Question(ch);
+function getC1Scenario() {
+  const p = S.c1.selectedProblem;
+  const a = S.c1.selectedAudience;
+  if (!p || !a) return null;
+  const key = p.id + "_" + a.id;
+  return G.c1.scenarios[key] || buildFallbackScenario(p, a);
+}
+
+function buildFallbackScenario(p, a) {
+  return {
+    hint: `تلميح: فكّر في حل عملي يرتبط بمشكلة "${p.title}" ويناسب جمهور "${a.title}".`,
+    question: `ما الحل الابتكاري الذي يعالج "${p.title}" ويُلائم "${a.title}"؟`,
+    options: [
+      { text: "تصميم حل يشرك الجمهور في الحل نفسه", desc: `يستثمر قدرات ${a.title} في معالجة ${p.title}`, feedback: "حل مناسب: يوجّه قوة الجمهور مباشرة نحو جوهر المشكلة.", best: true, points: 5 },
+      { text: "برنامج توعية واسع", desc: `حملة توعية عن ${p.title} تستهدف ${a.title}`, feedback: "مقبول: التوعية قاعدة مهمة لكنها لا تصنع تغييرًا عمليًا بمفردها.", best: false, points: 3 },
+      { text: "تطبيق تقني متكامل", desc: `حل رقمي ببيئة ملائمة لـ${a.title}`, feedback: "خطوة جيدة للبعض لكن الاعتماد على التقنية وحدها يفشل مع جماهير واسعة.", best: false, points: 2 },
+      { text: "عدم البدء وانتظار المبادرات الكبرى", desc: "ترك المبادرة للجهات الكبيرة", feedback: "التسويف ليس خيارًا — الحلول تبدأ من الأفراد والفرق الصغيرة.", best: false, points: 0 }
+    ]
+  };
 }
 
 function renderC1Question(ch) {
   S.c1.challengeData = ch;
+  const p = S.c1.selectedProblem;
+  const a = S.c1.selectedAudience;
   $("c1QuestionArea").innerHTML = `
     <div class="c1-q-card">
+      <div class="c1-summary">
+        <div class="c1-sum-title">🧩 تحديك الآن</div>
+        <div class="c1-sum-row">
+          <span class="c1-sum-icon">${p ? p.icon : "🎯"}</span>
+          <span class="c1-sum-text"><b>المشكلة:</b> ${esc(p ? p.title : "")}</span>
+        </div>
+        <div class="c1-sum-row">
+          <span class="c1-sum-icon">${a ? a.icon : "👥"}</span>
+          <span class="c1-sum-text"><b>الجمهور:</b> ${esc(a ? a.title : "")}</span>
+        </div>
+        <div class="c1-sum-cta">هل تستطيع ابتكار حل يناسب الاثنين؟</div>
+      </div>
       <div class="c1-hint">${esc(ch.hint)}</div>
       <h3 class="c1-question">${esc(ch.question)}</h3>
       <div class="c1-options">
@@ -233,8 +255,8 @@ function answerC1(idx) {
   document.querySelectorAll(".c1-opt").forEach((b, i) => {
     b.classList.remove("selected");
     b.disabled = true;
-    if (i === ch.correctIndex) b.classList.add("correct");
-    if (i === idx && idx !== ch.correctIndex) b.classList.add("wrong");
+    if (ch.options[i].best) b.classList.add("correct");
+    if (i === idx && !opt.best) b.classList.add("wrong");
   });
   S.scores.creativity += opt.points;
   S.totalPossible += 5;
@@ -243,7 +265,6 @@ function answerC1(idx) {
     <div class="feedback-box ${opt.best ? 'good' : 'bad'}">
       <div class="fb-icon">${opt.best ? '✅' : '❌'}</div>
       <div class="fb-text">${esc(opt.feedback)}</div>
-      <div class="fb-risk">${esc(opt.risk)}</div>
     </div>
   `;
   $("c1Actions").style.display = "block";

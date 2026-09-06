@@ -218,6 +218,17 @@ img{max-width:100%;display:block}
 .c1-question,.c3-question{font-size:clamp(1.15rem,3vw,1.4rem);font-weight:900;margin-bottom:22px;line-height:1.4}
 .c1-q-card{animation:screenIn .5s var(--ease)}
 
+/* ═══ C1 SUMMARY ═══ */
+.c1-summary{background:linear-gradient(160deg,rgba(232,181,71,.14),rgba(232,181,71,.02));border:1px solid rgba(255,201,77,.32);
+  border-radius:var(--rad);padding:20px 24px;margin-bottom:20px;animation:pop .5s var(--ease)}
+.c1-sum-title{font-size:.85rem;font-weight:900;letter-spacing:.5px;color:var(--acc);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.c1-sum-row{display:flex;align-items:center;gap:12px;padding:6px 0}
+.c1-sum-icon{font-size:1.5rem;width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;background:var(--glass-2);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px}
+.c1-sum-text{font-weight:700;font-size:.98rem;line-height:1.5}
+.c1-sum-text b{color:var(--acc)}
+.c1-sum-cta{margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,201,77,.3);font-weight:900;font-size:1.05rem;text-align:center;color:var(--ink)}
+
 /* ═══ C2 ═══ */
 .c2-alert{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(160deg,rgba(255,93,108,.14),rgba(255,93,108,.03));
   border:1px solid rgba(255,93,108,.32);border-radius:999px;padding:9px 18px;font-size:.9rem;font-weight:800;color:var(--red);margin-bottom:18px;animation:pulse 2s infinite}
@@ -290,10 +301,6 @@ img{max-width:100%;display:block}
 .flex-box{background:linear-gradient(160deg,rgba(49,227,162,.07),rgba(49,227,162,.02));border:1px solid rgba(49,227,162,.2);border-radius:var(--rad);padding:22px 26px;margin-top:22px}
 .flex-box strong{display:block;margin-bottom:6px;font-size:1rem;color:var(--grn)}
 .flex-box p{color:var(--mute);font-size:.92rem;line-height:1.85;margin:0}
-.qr-box{text-align:center;padding:44px 26px;background:linear-gradient(160deg,var(--glass-2),var(--glass));border:1px solid var(--line);border-radius:var(--rad-lg);margin-top:30px;backdrop-filter:blur(8px)}
-.qr-box h3{font-size:1.2rem;margin-bottom:8px;font-weight:900}
-.qr-box p{color:var(--mute);margin-bottom:18px;font-size:.9rem}
-.qr-img{width:180px;height:180px;border-radius:14px;border:1px solid rgba(255,201,77,.3);box-shadow:0 10px 40px -12px var(--acc-glow);margin:0 auto;background:#fff;padding:8px}
 .about-credit{text-align:center;font-size:.82rem;color:var(--faint);letter-spacing:1px;margin-top:24px;font-weight:600;opacity:.6}
 
 /* ═══ MENU / JOURNEY ═══ */
