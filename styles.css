@@ -381,7 +381,7 @@ img{max-width:100%;display:block}
 .r-name-section{width:100%;max-width:560px;text-align:center;animation:screenIn .7s var(--ease) .45s backwards}
 .r-name-label{font-size:1rem;font-weight:800;margin-bottom:16px}
 .r-name-input{width:100%;max-width:330px;padding:16px 20px;background:var(--glass);border:1px solid var(--line);border-radius:14px;
-  color:var(--ink);font-family:inherit;font-size:1rem;text-align:center;outline:none;transition:border-color .25s,box-shadow .25s;margin-bottom:18px;backdrop-filter:blur(8px)}
+  color:var(--ink);font-family:inherit;font-size:1.2rem;font-weight:700;text-align:center;outline:none;transition:border-color .25s,box-shadow .25s;margin-bottom:18px;backdrop-filter:blur(8px)}
 .r-name-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-glow)}
 
 /* ═══ SHAREABLE CARD ═══ */
@@ -394,7 +394,7 @@ img{max-width:100%;display:block}
 .card-close:hover{background:rgba(255,255,255,.14)}
 .card-share-icon{font-size:4.2rem;margin-bottom:12px;display:block;animation:floatIcon 5s infinite}
 .card-share-type{font-size:1.7rem;font-weight:900;color:var(--acc);margin-bottom:10px}
-.card-share-name{font-size:1.15rem;font-weight:800;margin-bottom:18px}
+.card-share-name{font-size:1.7rem;font-weight:900;letter-spacing:.5px;margin-bottom:18px;color:var(--ink);text-shadow:0 2px 0 rgba(0,0,0,.35),0 0 26px rgba(255,201,77,.28)}
 .card-share-score{font-family:var(--font-en);font-size:2.9rem;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:1px}
 .card-share-score small{font-size:1rem;color:var(--mute);font-family:var(--font)}
 .card-share-score small{font-size:1rem;color:var(--mute)}
