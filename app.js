@@ -8,10 +8,8 @@ const escf = s => String(s).replace(/"/g,"&quot;");
 const S = {
   screen: "landing",
   completed: new Set(),
-  scores: { creativity: 0, problemSolving: 0, decision: 0, risk: 0, strategy: 0, userFocus: 0, speed: 0 },
-  totalPossible: 0,
   // C1
-  c1: { selectedProblem: null, selectedAudience: null, challengeStep: 0, challengeIdx: 0 },
+  c1: { selectedProblem: null, selectedAudience: null, stepIdx: 0, steps: [], answers: [] },
   // C2
   c2: { scenario: 0, decided: false, decisions: [], canChange: false },
   // C3
@@ -140,7 +138,7 @@ function startChallenge(id) {
 // C1: PROBLEM + AUDIENCE + INNOVATION
 // ═══════════════════════════════════════════
 function startC1() {
-  S.c1 = { selectedProblem: null, selectedAudience: null, challengeStep: 0, challengeIdx: 0 };
+  S.c1 = { selectedProblem: null, selectedAudience: null, stepIdx: 0, steps: [], answers: [] };
   showScreen("c1Screen");
   $("c1Title").textContent = G.c1.title;
   $("c1Problems").innerHTML = G.c1.problems.map(p => `
@@ -188,8 +186,12 @@ function selectC1(type, id, el) {
 function startC1Challenge() {
   $("c1Step2").style.display = "none";
   $("c1Step3").style.display = "block";
-  const ch = getC1Scenario();
-  if (ch) renderC1Question(ch);
+  const scen = getC1Scenario();
+  if (!scen) { alert("اختر مشكلة وجمهورًا أولًا"); return; }
+  S.c1.steps = scen.steps;
+  S.c1.stepIdx = 0;
+  S.c1.answers = [];
+  renderC1Step();
 }
 
 function getC1Scenario() {
@@ -197,26 +199,101 @@ function getC1Scenario() {
   const a = S.c1.selectedAudience;
   if (!p || !a) return null;
   const key = p.id + "_" + a.id;
-  return G.c1.scenarios[key] || buildFallbackScenario(p, a);
+  const authored = G.c1.scenarios[key];
+  if (authored) {
+    const core = { hint: authored.hint, question: authored.question, options: authored.options };
+    return { steps: buildC1Steps(p, a, core) };
+  }
+  return buildFallbackScenario(p, a);
+}
+
+function mkC1Op(text, desc, feedback, best, points) {
+  return { text, desc, feedback, best, points };
+}
+
+// 5-step dynamic journey: فهم المشكلة → فهم الجمهور → توليد الحل → تنفيذ الحل → القرار النهائي
+// Core step (توليد الحل) is the authored combo-specific question from G.c1.scenarios
+function buildC1Steps(p, a, core) {
+  const P = p.title, A = a.title;
+  const pf = p.facet || "المشكلة", ab = a.barrier || "الحاجز اليومي";
+
+  const q1 = {
+    label: "فهم المشكلة",
+    q: `ما أول ما يجب أن تفهمه عن مشكلة "${P}" من منظور ${A}؟`,
+    hint: `انظر إلى الجذر العملي: ${pf}.`,
+    options: [
+      mkC1Op("أنها مشكلة يومية تترافق مع حياة هؤلاء", `تُقاس "${P}" بأسبوع ${A} وعاداتهم المعتادة`, "إصابة دقيقة — فهم اليومي هو مدخل الحل الصحيح", true, 5),
+      mkC1Op("أنها مسؤولية جهات أكبر من الأفراد", "حلها يحتاج نظامًا لا فردًا", "جزئيًا صحيح — لكن الانتظار يوقفك قبل البدء", false, 3),
+      mkC1Op("أنها حالة وعي تكفيها التوعية", "المعلومة وحدها تحرك الجمهور", "التوعية لا تصنع سلوكًا مستمرًا بلا أداة عملية", false, 2),
+      mkC1Op("أنها لا تمس حياة هذا الجمهور", `المشكلة بعيدة عن ${A}`, "تجاهل الجمهور يقضي على أي حل مقبول", false, 1)
+    ]
+  };
+
+  const q2 = {
+    label: "فهم الجمهور",
+    q: `ما أكبر عائق يمنع ${A} من الانخراط في حل "${P}"؟`,
+    hint: `اكتشف العائق الحقيقي: ${ab}.`,
+    options: [
+      mkC1Op(`${A} لا يملكون قناة سهلة تصلهم بالحل`, "الحل موجود لكن الوصول إليه متعب", "ممتاز — إزالة العائق أهم من زيادة الحوافز", true, 5),
+      mkC1Op("لا ثقة لديهم بالحلول الجديدة", "خوف من المجهول أو تجارب سابقة", "صحيح — الثقة تُبنى بتجارب صغيرة ناجحة", false, 4),
+      mkC1Op("العائق ضعف الوعي العام", "يحتاجون شرحًا أوسع أولًا", "الوعي مطلوب لكنه لا يكفي لدفعهم للمشاركة", false, 3),
+      mkC1Op(`${A} لا يهمهم الأمر إطلاقًا`, "المشكلة لا تمسهم وجدانًا", "قِس احتياجهم الفعلي ولا تفترضه", false, 1)
+    ]
+  };
+
+  const q3 = { label: "توليد الحل", hint: core.hint, q: core.question, options: core.options };
+
+  const q4 = {
+    label: "تنفيذ الحل",
+    q: `لتنفيذ حل "${P}" مع ${A}، ما أنجح طريقة للاختبار قبل التوسع؟`,
+    hint: "ابدأ صغيرًا وجرّب سريعًا ودع الجمهور يصحح الاتجاه.",
+    options: [
+      mkC1Op("نموذج مصغّر مع عيّنة صغيرة من الجمهور", `تجربة محدودة تقيس أثر "${P}" قبل التوسع`, "ممتاز — التجربة المصغّرة أسرع طريق لنتيجة آمنة", true, 5),
+      mkC1Op("تحالف مع شركاء محليين يدعمون التنفيذ", "شركاء يقللون الكلفة ويرفعون المصداقية", "جيد — الشراكات تمنح الحل استمرارية", false, 4),
+      mkC1Op("انطلاقة شاملة لكل الجمهور دفعة واحدة", "حل كامل التوسع من اليوم الأول", "مخاطرة عالية — الفشل الكبير يبدأ بانطلاق مكلف", false, 2),
+      mkC1Op("الاستمرار بالدراسة وتحسين الفكرة فقط", "تأجيل التنفيذ حتى اكتمال الظروف", "التأجيل الطويل يقتل الزخم — جرّب بأدلة صغيرة", false, 1)
+    ]
+  };
+
+  const q5 = {
+    label: "القرار النهائي",
+    q: `ما قرارك النهائي لتحويل حل "${P}" إلى واقع يلمسه ${A}؟`,
+    hint: "القرار الجيد قابل للبدء خلال أسبوع وله مقياس أثر واضح.",
+    options: [
+      mkC1Op("بدء نسخة أولى خلال أسبوع مع مقياس أثر", `خطة زمنية واضحة تُظهر أثر "${P}" على ${A}`, "ممتاز — الوقت والقياس يحولان الفكرة إلى واقع", true, 5),
+      mkC1Op("تكوين فريق صغير يتبنى التنفيذ", "توزيع المسؤولية على الملتزمين", "جيد — الفريق يحول الحماس إلى استمرارية", false, 4),
+      mkC1Op("تأمين التمويل أولًا قبل أي خطوة", "تغطية الكلفة قبل البدء", "قد تتأخر طويلًا — البدء الصغير يقلص الحاجة للتمويل", false, 2),
+      mkC1Op("ترك الأمر لأصحاب القرار الكبار وحدهم", "لا دور للأفراد في تنفيذه", "كل حل عظيم بدأ بمبادرة فردية صغيرة", false, 1)
+    ]
+  };
+
+  return [q1, q2, q3, q4, q5];
 }
 
 function buildFallbackScenario(p, a) {
-  return {
+  const core = {
     hint: `تلميح: فكّر في حل عملي يرتبط بمشكلة "${p.title}" ويناسب جمهور "${a.title}".`,
     question: `ما الحل الابتكاري الذي يعالج "${p.title}" ويُلائم "${a.title}"؟`,
     options: [
-      { text: "تصميم حل يشرك الجمهور في الحل نفسه", desc: `يستثمر قدرات ${a.title} في معالجة ${p.title}`, feedback: "حل مناسب: يوجّه قوة الجمهور مباشرة نحو جوهر المشكلة.", best: true, points: 5 },
-      { text: "برنامج توعية واسع", desc: `حملة توعية عن ${p.title} تستهدف ${a.title}`, feedback: "مقبول: التوعية قاعدة مهمة لكنها لا تصنع تغييرًا عمليًا بمفردها.", best: false, points: 3 },
-      { text: "تطبيق تقني متكامل", desc: `حل رقمي ببيئة ملائمة لـ${a.title}`, feedback: "خطوة جيدة للبعض لكن الاعتماد على التقنية وحدها يفشل مع جماهير واسعة.", best: false, points: 2 },
-      { text: "عدم البدء وانتظار المبادرات الكبرى", desc: "ترك المبادرة للجهات الكبيرة", feedback: "التسويف ليس خيارًا — الحلول تبدأ من الأفراد والفرق الصغيرة.", best: false, points: 0 }
+      mkC1Op("تصميم حل يشرك الجمهور في الحل نفسه", `يستثمر قدرات ${a.title} في معالجة ${p.title}`, "حل مناسب: يوجّه قوة الجمهور مباشرة نحو جوهر المشكلة", true, 5),
+      mkC1Op("برنامج توعية واسع", `حملة توعية عن ${p.title} تستهدف ${a.title}`, "مقبول: التوعية قاعدة لكنها لا تصنع تغييرًا عمليًا", false, 3),
+      mkC1Op("تطبيق تقني متكامل", `حل رقمي ببيئة ملائمة لـ${a.title}`, "الاعتماد على التقنية وحدها يفشل مع جماهير واسعة", false, 2),
+      mkC1Op("عدم البدء وانتظار المبادرات الكبرى", "ترك المبادرة للجهات الكبيرة", "التسويف ليس خيارًا — الحلول تبدأ صغيرة", false, 0)
     ]
   };
+  return { steps: buildC1Steps(p, a, core) };
 }
 
-function renderC1Question(ch) {
-  S.c1.challengeData = ch;
+function renderC1Step() {
+  const steps = S.c1.steps;
+  if (!steps || !steps.length) return;
   const p = S.c1.selectedProblem;
   const a = S.c1.selectedAudience;
+  const idx = S.c1.stepIdx;
+  const step = steps[idx];
+  const isLast = idx === steps.length - 1;
+  const ans = S.c1.answers[idx];
+  const dots = steps.map((_, i) => `<span class="c1-dot ${i < idx ? 'done' : ''} ${i === idx ? 'active' : ''}"></span>`).join("");
   $("c1QuestionArea").innerHTML = `
     <div class="c1-q-card">
       <div class="c1-summary">
@@ -231,43 +308,63 @@ function renderC1Question(ch) {
         </div>
         <div class="c1-sum-cta">هل تستطيع ابتكار حل يناسب الاثنين؟</div>
       </div>
-      <div class="c1-hint">${esc(ch.hint)}</div>
-      <h3 class="c1-question">${esc(ch.question)}</h3>
+      <div class="c1-progress">
+        <div class="c1-progress-label">${esc(step.label)} · السؤال ${idx + 1} من ${steps.length}</div>
+        <div class="c1-dots">${dots}</div>
+      </div>
+      <div class="c1-hint">${esc(step.hint)}</div>
+      <h3 class="c1-question">${esc(step.q)}</h3>
       <div class="c1-options">
-        ${ch.options.map((o, i) => `
-          <button class="c1-opt" onclick="answerC1(${i})">
+        ${step.options.map((o, i) => {
+          let cls = "c1-opt";
+          if (ans) {
+            cls += " selected";
+            if (o.best) cls += " correct";
+            if (i === ans.optIdx && !o.best) cls += " wrong";
+          }
+          return `<button class="${cls}" ${ans ? 'disabled' : ''} onclick="answerC1(${i})">
             <div class="c1-opt-title">${esc(o.text)}</div>
             <div class="c1-opt-desc">${esc(o.desc)}</div>
-          </button>
-        `).join("")}
+          </button>`;
+        }).join("")}
       </div>
-      <div id="c1Feedback"></div>
-      <div id="c1Actions" style="display:none">
-        <button class="btn-primary btn-sm" onclick="finishC1()">النتيجة النهائية →</button>
+      ${ans ? `
+        <div class="feedback-box ${step.options[ans.optIdx].best ? 'good' : 'bad'}">
+          <div class="fb-icon">${step.options[ans.optIdx].best ? '✅' : '❌'}</div>
+          <div class="fb-text">${esc(step.options[ans.optIdx].feedback)}</div>
+        </div>
+      ` : `<div id="c1Feedback"></div>`}
+      <div id="c1Actions" ${ans ? '' : 'style="display:none"'}>
+        ${idx > 0 ? `<button class="btn-outline btn-sm" onclick="backC1Step()">→ السابق</button>` : ''}
+        ${isLast
+          ? `<button class="btn-primary btn-sm" onclick="finishC1()">النتيجة النهائية ←</button>`
+          : `<button class="btn-primary btn-sm" onclick="nextC1Step()">التالي ←</button>`}
       </div>
     </div>
   `;
 }
 
-function answerC1(idx) {
-  const ch = S.c1.challengeData;
-  const opt = ch.options[idx];
-  document.querySelectorAll(".c1-opt").forEach((b, i) => {
-    b.classList.remove("selected");
-    b.disabled = true;
-    if (ch.options[i].best) b.classList.add("correct");
-    if (i === idx && !opt.best) b.classList.add("wrong");
-  });
-  S.scores.creativity += opt.points;
-  S.totalPossible += 5;
-  const fb = $("c1Feedback");
-  fb.innerHTML = `
-    <div class="feedback-box ${opt.best ? 'good' : 'bad'}">
-      <div class="fb-icon">${opt.best ? '✅' : '❌'}</div>
-      <div class="fb-text">${esc(opt.feedback)}</div>
-    </div>
-  `;
-  $("c1Actions").style.display = "block";
+function answerC1(optIdx) {
+  const idx = S.c1.stepIdx;
+  const step = S.c1.steps[idx];
+  S.c1.answers[idx] = { optIdx, points: step.options[optIdx].points };
+  renderC1Step();
+}
+
+function nextC1Step() {
+  if (S.c1.stepIdx < S.c1.steps.length - 1) {
+    S.c1.stepIdx++;
+    renderC1Step();
+  } else {
+    finishC1();
+  }
+}
+
+function backC1Step() {
+  if (S.c1.stepIdx > 0) {
+    S.c1.stepIdx--;
+    renderC1Step();
+  }
 }
 
 function finishC1() {
@@ -280,8 +377,6 @@ function finishC1() {
 // ═══════════════════════════════════════════
 function startC2() {
   S.c2 = { scenario: 0, decided: false, decisions: [], canChange: false };
-  S.scores.decision = 0; S.scores.risk = 0; S.scores.strategy = 0;
-  S.totalPossible = 0;
   showScreen("c2Screen");
   renderC2Scenario(0);
 }
@@ -333,12 +428,7 @@ function decideC2(scIdx, optIdx) {
     if (o.correct) $(`c2opt${i}`).classList.add("correct");
   });
 
-  S.scores.decision += opt.points;
-  S.scores.risk += opt.correct ? 5 : 2;
-  S.scores.strategy += opt.points;
-  S.totalPossible += 5;
-
-  S.c2.decisions[scIdx] = { optIdx, points: opt.points };
+  S.c2.decisions[scIdx] = { optIdx, points: opt.points, riskP: opt.correct ? 5 : 2 };
   S.c2.decided = true;
 
   $("c2Feedback").innerHTML = `
@@ -352,10 +442,6 @@ function decideC2(scIdx, optIdx) {
 }
 
 function changeC2(scIdx) {
-  const sc = G.c2.scenarios[scIdx];
-  const prev = S.c2.decisions[scIdx];
-  S.scores.decision -= prev.points;
-
   renderC2Scenario(scIdx);
 }
 
@@ -374,7 +460,6 @@ function finishC2() {
 // ═══════════════════════════════════════════
 function startC3() {
   S.c3 = { step: 0, choices: [] };
-  S.scores.problemSolving = 0; S.scores.creativity = 0;
   showScreen("c3Screen");
   renderC3Store();
 }
@@ -447,10 +532,6 @@ function answerC3(stepIdx, optIdx) {
     if (o.correct) $(`c3opt${i}`).classList.add("correct");
   });
 
-  S.scores.problemSolving += opt.points;
-  S.scores.creativity += opt.points;
-  S.totalPossible += 5;
-
   S.c3.choices[stepIdx] = { optIdx, points: opt.points };
 
   $("c3Feedback").innerHTML = `
@@ -464,9 +545,6 @@ function answerC3(stepIdx, optIdx) {
 }
 
 function changeC3(stepIdx) {
-  const prev = S.c3.choices[stepIdx];
-  S.scores.problemSolving -= prev.points;
-  S.scores.creativity -= prev.points;
   renderC3Step(stepIdx);
 }
 
@@ -485,7 +563,6 @@ function finishC3() {
 // ═══════════════════════════════════════════
 function startC4() {
   S.c4 = { persona: 0, choices: [] };
-  S.scores.userFocus = 0;
   showScreen("c4Screen");
   $("c4Product").innerHTML = `
     <div class="c4-product">
@@ -547,8 +624,6 @@ function answerC4(personaIdx, optIdx) {
     if (o.correct) $(`c4opt${i}`).classList.add("correct");
   });
 
-  S.scores.userFocus += opt.points;
-  S.totalPossible += 5;
   S.c4.choices[personaIdx] = { optIdx, points: opt.points };
 
   $("c4Feedback").innerHTML = `
@@ -562,8 +637,6 @@ function answerC4(personaIdx, optIdx) {
 }
 
 function changeC4(personaIdx) {
-  const prev = S.c4.choices[personaIdx];
-  S.scores.userFocus -= prev.points;
   renderC4Persona(personaIdx);
 }
 
@@ -595,22 +668,65 @@ function showFinalResult() {
   renderFinalResult();
 }
 
-function renderFinalResult() {
-  // Calculate personality
-  const maxScore = S.totalPossible || 1;
-  const total = S.scores.creativity + S.scores.problemSolving + S.scores.decision + S.scores.risk + S.scores.strategy + S.scores.userFocus + S.scores.speed;
-  const pct = Math.round((total / (maxScore * 7)) * 100);
+// Compute the final result strictly from the player's stored answers.
+// Every answered question is worth up to 5 points; score = earned/possible.
+function computeResult() {
+  const axes = { creativity: 0, problemSolving: 0, decision: 0, risk: 0, strategy: 0, userFocus: 0 };
+  const pb = { creativity: 0, problemSolving: 0, decision: 0, risk: 0, strategy: 0, userFocus: 0 };
+  let earned = 0, possible = 0;
 
+  function add(points, key) {
+    earned += points;
+    possible += 5;
+    axes[key] += points;
+    pb[key] += 5;
+  }
+
+  (S.c1.answers || []).forEach(an => add(an.points, "creativity"));
+
+  (S.c2.decisions || []).forEach(d => {
+    add(d.points, "decision");
+    add(d.riskP != null ? d.riskP : (d.points === 5 ? 5 : 2), "risk");
+    add(d.points, "strategy");
+  });
+
+  (S.c3.choices || []).forEach(c => {
+    add(c.points, "problemSolving");
+    add(c.points, "creativity");
+  });
+
+  (S.c4.choices || []).forEach(c => add(c.points, "userFocus"));
+
+  const pct = possible ? Math.round((earned / possible) * 100) : 0;
+
+  // Personality matching from real performance: relative strength per skill axis.
+  const P = k => pb[k] ? axes[k] / pb[k] : 0;
+  const comp = {
+    bold: P("risk"),
+    user: P("userFocus"),
+    creative: P("creativity") * 0.6 + P("problemSolving") * 0.4,
+    strategic: P("strategy"),
+    fast: P("decision")
+  };
+
+  const rank = ["user", "creative", "strategic", "bold", "fast"];
+  const pKeys = ["innovator_user", "innovator_creative", "innovator_strategic", "innovator_bold", "innovator_fast"];
   let personaKey = "innovator_fast";
-  const scores = S.scores;
-  if (scores.userFocus >= scores.decision && scores.userFocus >= scores.creativity) personaKey = "innovator_user";
-  else if (scores.strategy >= scores.risk && scores.strategy >= scores.speed) personaKey = "innovator_strategic";
-  else if (scores.creativity >= scores.decision && scores.creativity >= scores.risk) personaKey = "innovator_creative";
-  else if (scores.risk >= scores.strategy && scores.risk >= scores.userFocus) personaKey = "innovator_bold";
+  if (possible) {
+    let best = -1;
+    rank.forEach((r, i) => {
+      if (comp[r] > best) { best = comp[r]; personaKey = pKeys[i]; }
+    });
+  }
 
-  const p = G.personalities[personaKey];
+  return { pct, axes, pb, earned, possible, personaKey, comp };
+}
 
-  // Name input area
+function renderFinalResult() {
+  const R = computeResult();
+  const pct = Math.min(R.pct, 100);
+  const p = G.personalities[R.personaKey];
+
   $("resultContent").innerHTML = `
     <div class="r-personality" style="--pc:${p.color}">
       <div class="r-badge">${esc(p.icon)} <span>من أنت كمبتكر؟</span></div>
@@ -637,12 +753,12 @@ function renderFinalResult() {
 
     <div class="r-scores">
       <div class="r-scores-title">أداؤك كمبتكر</div>
-      ${renderScoreBar("الإبداع", scores.creativity, 15)}
-      ${renderScoreBar("حل المشكلات", scores.problemSolving, 15)}
-      ${renderScoreBar("اتخاذ القرار", scores.decision, 15)}
-      ${renderScoreBar("التفكير الاستراتيجي", scores.strategy, 15)}
-      ${renderScoreBar("فهم الجمهور", scores.userFocus, 15)}
-      ${renderScoreBar("تقبل المخاطر", scores.risk, 15)}
+      ${renderScoreBar("الإبداع", R.pb.creativity ? Math.round(R.axes.creativity / R.pb.creativity * 100) : 0)}
+      ${renderScoreBar("حل المشكلات", R.pb.problemSolving ? Math.round(R.axes.problemSolving / R.pb.problemSolving * 100) : 0)}
+      ${renderScoreBar("اتخاذ القرار", R.pb.decision ? Math.round(R.axes.decision / R.pb.decision * 100) : 0)}
+      ${renderScoreBar("التفكير الاستراتيجي", R.pb.strategy ? Math.round(R.axes.strategy / R.pb.strategy * 100) : 0)}
+      ${renderScoreBar("فهم الجمهور", R.pb.userFocus ? Math.round(R.axes.userFocus / R.pb.userFocus * 100) : 0)}
+      ${renderScoreBar("تقبل المخاطر", R.pb.risk ? Math.round(R.axes.risk / R.pb.risk * 100) : 0)}
       <div class="r-total">
         <span class="t-label"> نتيجتك النهائية</span>
         <span class="r-total-num"><span id="scoreCounter">0</span><small> / 100</small></span>
@@ -655,7 +771,7 @@ function renderFinalResult() {
       <button class="btn-primary" onclick="generateCard()">إنشاء البطاقة <span class="btn-arrow">←</span></button>
     </div>
   `;
-  animateCounter("scoreCounter", Math.min(pct, 100));
+  animateCounter("scoreCounter", pct);
 }
 
 function animateCounter(id, target, dur = 1600) {
@@ -671,9 +787,9 @@ function animateCounter(id, target, dur = 1600) {
   requestAnimationFrame(tick);
 }
 
-function renderScoreBar(label, value, max) {
-  const pct = Math.min(Math.round((value / max) * 100), 100);
-  const stars = pct >= 80 ? "⭐⭐⭐⭐⭐" : pct >= 60 ? "⭐⭐⭐⭐☆" : pct >= 40 ? "⭐⭐⭐☆☆" : pct >= 20 ? "⭐⭐☆☆☆" : "⭐☆☆☆☆";
+function renderScoreBar(label, pctScore) {
+  const pctc = Math.max(0, Math.min(100, Math.round(pctScore)));
+  const stars = pctc >= 80 ? "⭐⭐⭐⭐⭐" : pctc >= 60 ? "⭐⭐⭐⭐☆" : pctc >= 40 ? "⭐⭐⭐☆☆" : pctc >= 20 ? "⭐⭐☆☆☆" : "⭐☆☆☆☆";
   return `
     <div class="score-row">
       <div class="score-label">${esc(label)}</div>
@@ -688,23 +804,14 @@ function generateCard() {
   if (!name) { alert("الرجاء كتابة اسمك"); return; }
   S.playerName = name;
 
-  const maxScore = S.totalPossible || 1;
-  const total = S.scores.creativity + S.scores.problemSolving + S.scores.decision + S.scores.risk + S.scores.strategy + S.scores.userFocus + S.scores.speed;
-  const pct = Math.round((total / (maxScore * 7)) * 100);
-
-  let personaKey = "innovator_fast";
-  const scores = S.scores;
-  if (scores.userFocus >= scores.decision && scores.userFocus >= scores.creativity) personaKey = "innovator_user";
-  else if (scores.strategy >= scores.risk && scores.strategy >= scores.speed) personaKey = "innovator_strategic";
-  else if (scores.creativity >= scores.decision && scores.creativity >= scores.risk) personaKey = "innovator_creative";
-  else if (scores.risk >= scores.strategy && scores.risk >= scores.userFocus) personaKey = "innovator_bold";
-
-  const p = G.personalities[personaKey];
+  const R = computeResult();
+  const pct = Math.min(R.pct, 100);
+  const p = G.personalities[R.personaKey];
 
   $("cardName").textContent = name;
   $("cardType").textContent = p.type;
   $("cardIcon").textContent = p.icon;
-  $("cardScore").innerHTML = Math.min(pct, 100) + "<small>/100</small>";
+  $("cardScore").innerHTML = pct + "<small>/100</small>";
   $("cardMatch").textContent = "يشبه: " + p.match;
   $("cardDesc").textContent = p.desc;
   $("cardOverlay").classList.add("show");

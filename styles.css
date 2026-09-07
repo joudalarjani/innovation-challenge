@@ -184,6 +184,14 @@ img{max-width:100%;display:block}
 .preview-plus{font-size:1.9rem;color:var(--acc);font-weight:900;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 
+/* ═══ C1 JOURNEY PROGRESS ═══ */
+.c1-progress{margin:-4px 0 18px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(160deg,var(--glass-2),var(--glass))}
+.c1-progress-label{font-size:.8rem;font-weight:800;color:var(--mute);margin-bottom:8px;letter-spacing:.2px}
+.c1-dots{display:flex;gap:6px}
+.c1-dot{width:22px;height:6px;border-radius:99px;background:rgba(255,255,255,.14);transition:background .3s var(--ease)}
+.c1-dot.active{background:var(--acc);box-shadow:0 0 12px rgba(255,201,77,.5)}
+.c1-dot.done{background:var(--grn);opacity:.7}
+
 /* ═══ OPTION CARDS ═══ */
 .c1-options,.c2-options,.c3-options,.c4-options{display:grid;gap:14px}
 .c1-opt,.c2-opt,.c3-opt,.c4-opt{position:relative;text-align:right;background:linear-gradient(160deg,var(--glass),rgba(255,255,255,.015));
