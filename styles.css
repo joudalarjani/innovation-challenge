@@ -394,7 +394,8 @@ img{max-width:100%;display:block}
 .card-close:hover{background:rgba(255,255,255,.14)}
 .card-share-icon{font-size:4.2rem;margin-bottom:12px;display:block;animation:floatIcon 5s infinite}
 .card-share-type{font-size:1.7rem;font-weight:900;color:var(--acc);margin-bottom:10px}
-.card-share-name{font-size:1.7rem;font-weight:900;letter-spacing:.5px;margin-bottom:18px;color:var(--ink);text-shadow:0 2px 0 rgba(0,0,0,.35),0 0 26px rgba(255,201,77,.28)}
+.card-share-name{font-size:2.5rem;font-weight:900;letter-spacing:.5px;margin-bottom:18px;color:#fff;line-height:1.35;
+  text-shadow:0 2px 0 rgba(0,0,0,.4),0 0 34px rgba(255,201,77,.35)}
 .card-share-score{font-family:var(--font-en);font-size:2.9rem;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:1px}
 .card-share-score small{font-size:1rem;color:var(--mute);font-family:var(--font)}
 .card-share-score small{font-size:1rem;color:var(--mute)}
